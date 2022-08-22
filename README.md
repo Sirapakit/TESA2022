@@ -1,6 +1,6 @@
 # TESA2022
 
-BME Ranger 12
+BME Ranger12
 
 ## Authors
 
