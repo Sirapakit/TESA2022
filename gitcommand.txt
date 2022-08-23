@@ -15,16 +15,20 @@ Cherry pick : create and merge
 
 
 Git flow
+0. git status  
 1. git add . 				--> staged all files
 2. git commit -m "<message>"	--> so cant rewind
-3. git push origin <branch>	--> push to remote ( when break )
+3. git push origin <branch>	--> push to remote ( when break ) 
+	<branch> = your bracnh name
 4. create pull request at branches in www.github.com --> when make sure the code work, merge into main
 5. merge --> automatically
 6. git checkout main
-Normally, we checkout -b <new branch>
+7. git checkout -b <new branch>
+	<new branch> = your new bracnh name
+8. git status
 
-5.5 git reset branch sirap to main
-6. git pull origin main  -> ยังไม่ลง branch
 
-
-git fetch origin --> f5
+Misc
+git log 			--> check log ( q to exit() )
+git status		--> check status, branch, local remote
+git fetch origin --> refresh
