@@ -18,8 +18,8 @@ Git flow
 1. git add . 				--> staged all files
 2. git commit -m "<message>"	--> so cant rewind
 3. git push origin <branch>	--> push to remote ( when break )
-4. create pull request at branches		--> when make sure the code work, merge into main
-5. merge 
+4. create pull request at branches in www.github.com --> when make sure the code work, merge into main
+5. merge --> automatically
 6. git checkout main
 Normally, we checkout -b <new branch>
 
