@@ -1,6 +1,6 @@
 # TESA2022
 
-BME Ranger12
+this repository will be use for competing "TESA2022 : Top Gun Rally" for members of "BME Ranger 12" team only kub :P
 
 ## Authors
 
