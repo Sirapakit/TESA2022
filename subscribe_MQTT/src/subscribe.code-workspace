@@ -1,0 +1,12 @@
+{
+	"folders": [
+		{
+			"path": "..\\..\\send_poten_MQTT"
+		},
+		{
+			"name": "subscribe_MQTT",
+			"path": ".."
+		}
+	],
+	"settings": {}
+}
