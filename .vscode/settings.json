@@ -1,0 +1,6 @@
+{
+    "C_Cpp.errorSquiggles": "Disabled",
+    "python.analysis.extraPaths": [
+        "./paho.mqtt.python/src"
+    ]
+}

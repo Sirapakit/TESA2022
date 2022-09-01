@@ -1,4 +1,4 @@
-topic = "TOPIC_TEST1";
+topic = "TEST/TESA";
 host = "tcp://broker.mqttdashboard.com";
 port = 1883;
 mqttClient = mqttclient(host,Port=port);
