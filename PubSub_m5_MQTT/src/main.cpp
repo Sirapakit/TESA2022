@@ -2,26 +2,19 @@
 #include <M5StickCPlus.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
-<<<<<<< HEAD
 #include <analogWrite.h>
 
-=======
->>>>>>> 7a6d22d400165690be2797a44d72ab86f1a7c7b8
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-<<<<<<< HEAD
 
-=======
->>>>>>> 7a6d22d400165690be2797a44d72ab86f1a7c7b8
 // Configure the name and password of the connected wifi and your MQTT Serve
 // host. 
 const char* ssid        = "catsvn";
 const char* password    = "catsvn2000";
 const char* mqtt_server = "10.13.8.163";
 //const char* mqtt_server = "broker.hivemq.com";
-<<<<<<< HEAD
 
 const char* outtopic_voltage = "Voltage"; 
 const char* outtopic_accX = "acc/X";
@@ -79,24 +72,6 @@ void setup() {
     pinMode(GPIO_pwm,OUTPUT);
     ledcSetup(ledChannel, freq, resolution);
     ledcAttachPin(GPIO_pwm, ledChannel);
-=======
-const char* intopic = "TEST/TESA";
-int pot_value;
-char pot_value_1 =  pot_value;
-//const char* pot_value_msg = pot_value_1;
-
-unsigned long lastMsg = 0;
-#define MSG_BUFFER_SIZE (50)
-char msg[MSG_BUFFER_SIZE];
-int value = 0;
-
-void setupWifi();
-void callback(char* topic, byte* payload, unsigned int length);
-void reConnect();
-void setup() {
-  Serial.begin(115200);
-    M5.begin();
->>>>>>> 7a6d22d400165690be2797a44d72ab86f1a7c7b8
     M5.Lcd.setRotation(3);
     setupWifi();
     client.setServer(mqtt_server,
@@ -106,7 +81,6 @@ void setup() {
 }
 
 void loop() {
-<<<<<<< HEAD
     int analog_value = analogRead(36);
     int voltage = floatMap(analog_value, 0, 4095, 0, 360);
     M5.IMU.getAccelData(&accX, &accY, &accZ);
@@ -120,14 +94,6 @@ void loop() {
     
     if (!client.connected()) 
     {
-=======
-     int pot_value = analogRead(36);
-//     Serial.print("Pot =");
-//     Serial.println(pot_value);
-     M5.Lcd.print("Pot =");
-     M5.Lcd.println(pot_value);
-    if (!client.connected()) {
->>>>>>> 7a6d22d400165690be2797a44d72ab86f1a7c7b8
         reConnect();
     }
     client.loop();  // This function is called periodically to allow clients to
@@ -138,7 +104,6 @@ unsigned long now =
      if (now - lastMsg > 2000) {
          lastMsg = now;
          ++value;
-<<<<<<< HEAD
         snprintf(msg_voltage, MSG_BUFFER_SIZE," %ld",voltage);
         snprintf(msg_accX, MSG_BUFFER_SIZE," %7.2f",accX);
         snprintf(msg_accY, MSG_BUFFER_SIZE," %7.2f",accY);
@@ -181,30 +146,17 @@ client.publish(outtopic_gyroZ, msg_gyroZ);
 client.publish(outtopic_gyroZ, ",");
             delay(500);
 
-=======
-        snprintf(msg, MSG_BUFFER_SIZE,"pung: %ld",pot_value);
-M5.Lcd.print("Publish message: ");
-M5.Lcd.println(msg);
-client.publish("M5Stack", msg);  // Publishes a message to the specified
-                                         //topic.
-
-
-            delay(1000);
->>>>>>> 7a6d22d400165690be2797a44d72ab86f1a7c7b8
          if (value %7 == 0) {
            M5.Lcd.fillScreen(BLACK);
             M5.Lcd.setCursor(0, 0);
         }
      }
-<<<<<<< HEAD
 
      if (M5.BtnA.wasReleasefor(100)) {
         esp_restart();
      }
       M5.update();  // Detect whether the keystroke state has changed.
       delay(100);  
-=======
->>>>>>> 7a6d22d400165690be2797a44d72ab86f1a7c7b8
 }
 
 void setupWifi() {
@@ -220,7 +172,6 @@ void setupWifi() {
     }
     M5.Lcd.printf("\nSuccess\n");
 }
-<<<<<<< HEAD
 void callback(char* intopic, byte* payload, unsigned int length) {
     //M5.Lcd.print("Message arrived [");
     //M5.Lcd.print(intopic);
@@ -272,19 +223,6 @@ void callback(char* intopic, byte* payload, unsigned int length) {
   prev_error = error;
     Serial.println("Motor Testing");
     delay(1000);
-=======
-void callback(char* topic, byte* payload, unsigned int length) {
-    M5.Lcd.print("Message arrived [");
-    M5.Lcd.print(topic);
-    M5.Lcd.print("] ");
-    for (int i = 0; i < length; i++) {
-//        M5.Lcd.print((char)payload[i]);
-//        Serial.print("Subscribe message: ");
-      Serial.print((char)payload[i]);
-    }
-//    M5.Lcd.println();
-    Serial.println();
->>>>>>> 7a6d22d400165690be2797a44d72ab86f1a7c7b8
 }
 
 void reConnect() {
@@ -310,8 +248,4 @@ void reConnect() {
             delay(5000);
         }
     }
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 7a6d22d400165690be2797a44d72ab86f1a7c7b8
