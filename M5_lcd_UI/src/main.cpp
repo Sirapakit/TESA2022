@@ -11,54 +11,12 @@ PubSubClient client(espClient);
 // 6 IMU --> Acc, Gyro X, Y, Z
 // Wifi, MQTT Status
 
-const char *outtopic_voltage = "Voltage";
-const char *outtopic_accX = "acc/X";
-const char *outtopic_accY = "acc/Y";
-const char *outtopic_accZ = "acc/Z";
-const char *outtopic_gyroX = "gyro/X";
-const char *outtopic_gyroY = "gyro/Y";
-const char *outtopic_gyroZ = "gyro/Z";
-const char *intopic = "TEST/TESA";
-
 unsigned long lastMsg = 0;
 int value = 0;
 
 void setup()
 {
     Serial.begin(115200);
-    M5.begin();
-    M5.Lcd.setRotation(3);
-    M5.Lcd.setTextSize(1);
-
-    M5.Lcd.drawRect(5, 5, 220, 120, BLUE);
-    M5.Lcd.drawRect(2, 2, 220, 120, PINK);
-
-    M5.Lcd.setCursor(80, 10);
-    M5.Lcd.println("BME RANGER 12");
-
-    M5.Lcd.setCursor(10, 30);
-    M5.Lcd.println("Acclerometer");
-    M5.Lcd.setCursor(10, 40);
-    M5.Lcd.println("   X       Y       Z");
-
-    M5.Lcd.setCursor(10, 55);
-    M5.Lcd.println("Gyrometer");
-    M5.Lcd.setCursor(10, 65);
-    M5.Lcd.println("   X       Y       Z");
-
-    M5.Lcd.setCursor(10, 80);
-    M5.Lcd.print("Voltage:  ");
-    M5.Lcd.println("350");
-
-    M5.Lcd.setCursor(10, 95);
-    M5.Lcd.print("Wifi-Status :  ");
-    // M5.Lcd.setCursor(10, 70);
-    M5.Lcd.println("Connected");
-
-    M5.Lcd.setCursor(10, 110);
-    M5.Lcd.print("MQTT-Status :  ");
-    // M5.Lcd.setCursor(10, 70);
-    M5.Lcd.println("Connected");
 }
 
 void loop()
@@ -68,13 +26,34 @@ void loop()
         // Serial.println(i);
 
         M5.Lcd.setCursor(40, 40);
-        M5.Lcd.print(i);
+        M5.Lcd.print(i + 57);
 
         M5.Lcd.setCursor(90, 40);
-        M5.Lcd.print(i);
+        M5.Lcd.print(i + 67);
 
         M5.Lcd.setCursor(140, 40);
-        M5.Lcd.print(i);
+        M5.Lcd.print(i - 4);
+
+        M5.Lcd.setCursor(40, 65);
+        M5.Lcd.print(i + 45);
+
+        M5.Lcd.setCursor(90, 65);
+        M5.Lcd.print(i + 569);
+
+        M5.Lcd.setCursor(140, 65);
+        M5.Lcd.print(i + 137);
+
+        // Voltage
+        M5.Lcd.setCursor(65, 80);
+        M5.Lcd.println(i);
+
+        // Wifi-Status
+        M5.Lcd.setCursor(95, 95);
+        M5.Lcd.println(i);
+
+        // MqTT Status
+        M5.Lcd.setCursor(95, 110);
+        M5.Lcd.println(i);
 
         delay(500);
     }
@@ -82,13 +61,25 @@ void loop()
     char charvalue = '5';
     int number = ((int(charvalue) + 0) - 48);
 
-    int numValue = 1379;
-    int *pointNum;
+    int numVal[] = {1, 3, 7, 9, '\0'};
 
-    pointNum = &numValue;
+    char text[] = "135 987";
 
-    Serial.print("Number value: ");
-    Serial.println(*pointNum);
+    int x, y;
+    sscanf(text, "%d%d", &x, &y);
+    Serial.print("text to int: ");
+    // Serial.println(x);
+    // Serial.println(y);
+
+    // int x = atoi(numVal);
+
+    // int numValue = 1379;
+    // int *pointNum;
+
+    // pointNum = &numValue;
+
+    // Serial.print("Number value: ");
+    // Serial.println(*pointNum);
 
     // M5.Lcd.printf("Voltage= 999");
     // M5.Lcd.println();
