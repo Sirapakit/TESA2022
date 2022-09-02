@@ -4,27 +4,23 @@
 #include <PubSubClient.h>
 #include <analogWrite.h>
 
-
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-
 // Configure the name and password of the connected wifi and your MQTT Serve
-// host. 
-const char* ssid        = "catsvn";
-const char* password    = "catsvn2000";
-const char* mqtt_server = "10.13.8.163";
-//const char* mqtt_server = "broker.hivemq.com";
+// host.
 
-const char* outtopic_voltage = "Voltage"; 
-const char* outtopic_accX = "acc/X";
-const char* outtopic_accY = "acc/Y";
-const char* outtopic_accZ = "acc/Z";
-const char* outtopic_gyroX = "gyro/X";
-const char* outtopic_gyroY = "gyro/Y";
-const char* outtopic_gyroZ = "gyro/Z";
+// const char* mqtt_server = "broker.hivemq.com";
 
-const char* intopic = "TEST/TESA";
+const char *outtopic_voltage = "Voltage";
+const char *outtopic_accX = "acc/X";
+const char *outtopic_accY = "acc/Y";
+const char *outtopic_accZ = "acc/Z";
+const char *outtopic_gyroX = "gyro/X";
+const char *outtopic_gyroY = "gyro/Y";
+const char *outtopic_gyroZ = "gyro/Z";
+
+const char *intopic = "TEST/TESA";
 
 int analog_value;
 int analog_value_sub;
@@ -33,7 +29,7 @@ float gyroX, gyroY, gyroZ;
 
 const int freq = 60;
 const int ledChannel = 0;
-const int resolution = 8; 
+const int resolution = 8;
 
 int GPIO_pwm = 25;
 
@@ -43,7 +39,6 @@ float prev_error;
 float pwm;
 float curr_time;
 float prev_time;
-
 
 unsigned long lastMsg = 0;
 #define MSG_BUFFER_SIZE (50)
@@ -56,20 +51,22 @@ char msg_gyroY[MSG_BUFFER_SIZE];
 char msg_gyroZ[MSG_BUFFER_SIZE];
 int value = 0;
 
-float floatMap(float x, float in_min, float in_max, float out_min, float out_max){
+float floatMap(float x, float in_min, float in_max, float out_min, float out_max)
+{
     return (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
 }
 
 void setupWifi();
-void callback(char* topic, byte* payload, unsigned int length);
+void callback(char *topic, byte *payload, unsigned int length);
 void reConnect();
 
-void setup() {
-  Serial.begin(115200);
+void setup()
+{
+    Serial.begin(115200);
     M5.begin();
     M5.IMU.Init();
-    Wire.begin(32,33);
-    pinMode(GPIO_pwm,OUTPUT);
+    Wire.begin(32, 33);
+    pinMode(GPIO_pwm, OUTPUT);
     ledcSetup(ledChannel, freq, resolution);
     ledcAttachPin(GPIO_pwm, ledChannel);
     M5.Lcd.setRotation(3);
@@ -106,12 +103,13 @@ void setup() {
 
     setupWifi();
     client.setServer(mqtt_server,
-                     1883);  // Sets the server details.
+                     1883); // Sets the server details.
     client.setCallback(
-        callback);  // Sets the message callback function.
+        callback); // Sets the message callback function.
 }
 
-void loop() {
+void loop()
+{
     int analog_value = analogRead(36);
     int voltage = floatMap(analog_value, 0, 4095, 0, 360);
     M5.IMU.getAccelData(&accX, &accY, &accZ);
@@ -195,7 +193,29 @@ client.publish(outtopic_gyroY, ",");
 //M5.Lcd.println(msg_gyroZ);
 client.publish(outtopic_gyroZ, msg_gyroZ);
 client.publish(outtopic_gyroZ, ",");
+
             delay(500);
+            M5.Lcd.print(".");
+        }
+        M5.Lcd.printf("\nSuccess\n");
+    }
+    void callback(char *intopic, byte *payload, unsigned int length)
+    {
+        // M5.Lcd.print("Message arrived [");
+        // M5.Lcd.print(intopic);
+        // M5.Lcd.print("] ");
+        const int max_array = 50;
+        const char *angle_sub[max_array];
+        int count = 0;
+        char array[50];
+
+        for (int i = 0; i < length; i++)
+        {
+            Serial.print((char)payload[i]);
+            array[i] = ((char)payload[i]);
+        }
+        Serial.println();
+
 
         //  if (value %7 == 0) {
         //    M5.Lcd.fillScreen(BLACK);
@@ -203,12 +223,12 @@ client.publish(outtopic_gyroZ, ",");
         // }
     //  }
 
-     if (M5.BtnA.wasReleasefor(100)) {
-        esp_restart();
-     }
-      M5.update();  // Detect whether the keystroke state has changed.
-      delay(100);  
-}
+
+        if (u < 1023)
+        {
+            u = 1023;
+        }
+
 
 void setupWifi() { 
     delay(10);
@@ -317,6 +337,6 @@ void reConnect() {
             M5.Lcd.print(client.state());
             //M5.Lcd.println("try again in 5 seconds");
             delay(5000);
+
         }
     }
-}
