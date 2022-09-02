@@ -1,0 +1,52 @@
+
+const int IO_RESTART_PERIOD = 500; // in unit of ms.
+
+void io_init() 
+{
+
+}
+
+void io_task() 
+{
+    if (M5.BtnA.wasReleasefor(IO_RESTART_PERIOD)) {
+        restart();
+    }
+}
+
+
+const long ADC_PERIOD = 100; // in unit of ms.
+
+void adc_task(long period) 
+{
+    static int timestamp = millis();
+    if ((millis() -  timestamp) >= period)) {
+        poten_finger_1 = analogRead();
+        
+        timestamp = millis();
+    }
+}
+
+const long MQTT_PERIOD = 1000; // in unit of ms.
+
+void mqtt_task()
+{
+    static int timestamp = millis();
+    if ((millis() -  timestamp) >= period)) {
+        error_code = pub_(peten);
+        
+        timestamp = millis();
+    }
+}
+
+
+void setup()
+{   
+    io_init();
+}
+
+void loop()
+{
+    io_task();
+    adc_task(ADC_PERIOD);
+    mqtt_task(MQTT_PERIOD);
+}
