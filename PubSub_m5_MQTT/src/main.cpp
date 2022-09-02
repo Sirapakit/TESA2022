@@ -50,10 +50,6 @@ void setup() {
     M5.begin();
     M5.IMU.Init();
     Wire.begin(32,33);
-    // pinMode(GPIO_in,INPUT);
-    // pinMode (GPIO_out,OUTPUT);
-    //pwm.begin();
-    //pwm.setPWMFreq(60);
 
     M5.Lcd.setRotation(3);
     M5.Lcd.setTextSize(1);
@@ -136,6 +132,7 @@ unsigned long now = millis();
         snprintf(msg_gyroX, MSG_BUFFER_SIZE," %7.2f",gyroX);
         snprintf(msg_gyroY, MSG_BUFFER_SIZE," %7.2f",gyroY);
         snprintf(msg_gyroZ, MSG_BUFFER_SIZE," %7.2f",gyroZ);
+<<<<<<< HEAD
 
 client.publish(outtopic_voltage, msg_voltage); 
 client.publish(outtopic_accX, msg_accX);
@@ -143,10 +140,17 @@ client.publish(outtopic_accY, msg_accY);
 client.publish(outtopic_accZ, msg_accZ);
 client.publish(outtopic_gyroX, msg_gyroX);
 client.publish(outtopic_gyroY, msg_gyroY);
+
 client.publish(outtopic_gyroZ, msg_gyroZ);
 delay(500);
 
 client.loop();  
+
+     if (M5.BtnA.wasReleasefor(100)) {
+        esp_restart();
+     }
+      M5.update();  // Detect whether the keystroke state has changed.
+      delay(100);  
 }
 
 void setupWifi() { 
@@ -154,6 +158,7 @@ void setupWifi() {
     M5.Lcd.setCursor(95, 95);
     M5.Lcd.print(ssid);
     WiFi.mode(WIFI_STA);  // Set the mode to WiFi station mode.
+
     WiFi.begin(ssid, password);  // Start Wifi connection. 
 
     while (WiFi.status() != WL_CONNECTED) {
@@ -178,6 +183,7 @@ void callback(char* intopic, byte* payload, unsigned int length) {
 
     int angle_1, angle_2;
     sscanf(array, "%d%d", &angle_1, &angle_2);
+<<<<<<< HEAD
     Serial.print("Angle1: ");
     Serial.println(angle_1);
     Serial.print("Angle2: ");
@@ -187,9 +193,6 @@ void callback(char* intopic, byte* payload, unsigned int length) {
 
     int curr_time = millis();
 
-
-
-
     Serial.println("Motor Testing");
     delay(1000);
 }
@@ -198,6 +201,7 @@ void reConnect() {
     while (!client.connected()) {
         M5.Lcd.setCursor(95, 110);
         M5.Lcd.println("Attempting");
+
         String clientId = "MM5St-";
         clientId += String(random(0xffff), HEX);
 
@@ -211,6 +215,7 @@ void reConnect() {
         } else {
             M5.Lcd.setCursor(95, 110);
             M5.Lcd.print("Failed");
+
             delay(5000);
         }
     }
