@@ -143,6 +143,7 @@ void lcd_task()
     M5.Lcd.setCursor(90, 65);
     M5.Lcd.print(gyroY);
 
+
     M5.Lcd.setCursor(140, 65);
     M5.Lcd.print(gyroZ);
 
