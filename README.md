@@ -1,4 +1,6 @@
 # TESA2022
+## our work flow
+![Alt Text](https://media3.giphy.com/media/9M5jK4GXmD5o1irGrF/giphy.gif)
 
 this repository will be use for competing "TESA2022 : Top Gun Rally" for members of "BME Ranger 12" team only kub :P
 
@@ -17,20 +19,4 @@ this repository will be use for competing "TESA2022 : Top Gun Rally" for members
 Special thanks to [@Peachiia](https://www.github.com/peachiia) for guidance.
 
 Teach Teach
-<div align="center">
-	<br>
-	<a href="https://github.com/Sirapakit/TESA2022/blob/main/custom.svg">
-		<img src="header.svg" width="800" height="400" alt="Click to see the source">
-	</a>
-	<br>
-</div>
 
-
-
-<br>
-<br>
-<br>
-<br>
-<br>
-<br>
-Explanation: https://css-tricks.com/custom-styles-in-github-readmes/
