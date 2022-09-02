@@ -36,7 +36,7 @@ const int ledChannel = 0;
 const int resolution = 8; 
 
 int GPIO_pwm = 25;
-float angle_sub;
+
 float curr_angle;
 float error;
 float prev_error;
@@ -73,6 +73,37 @@ void setup() {
     ledcSetup(ledChannel, freq, resolution);
     ledcAttachPin(GPIO_pwm, ledChannel);
     M5.Lcd.setRotation(3);
+    M5.Lcd.setTextSize(1);
+
+    M5.Lcd.drawRect(5, 5, 220, 120, BLUE);
+    M5.Lcd.drawRect(2, 2, 220, 120, PINK);
+
+    M5.Lcd.setCursor(80, 10);
+    M5.Lcd.println("BME RANGER 12");
+
+    M5.Lcd.setCursor(10, 30);
+    M5.Lcd.println("Acclerometer");
+    M5.Lcd.setCursor(10, 40);
+    M5.Lcd.println("   X       Y       Z");
+
+    M5.Lcd.setCursor(10, 55);
+    M5.Lcd.println("Gyrometer");
+    M5.Lcd.setCursor(10, 65);
+    M5.Lcd.println("   X       Y       Z");
+
+    M5.Lcd.setCursor(10, 80);
+    M5.Lcd.print("Voltage:  ");
+
+    M5.Lcd.setCursor(10, 95);
+    M5.Lcd.print("Wifi-Status :  ");
+    // M5.Lcd.setCursor(10, 70);
+    M5.Lcd.println("Connected");
+
+    M5.Lcd.setCursor(10, 110);
+    M5.Lcd.print("MQTT-Status :  ");
+    // M5.Lcd.setCursor(10, 70);
+    M5.Lcd.println("Connected");
+
     setupWifi();
     client.setServer(mqtt_server,
                      1883);  // Sets the server details.
@@ -85,12 +116,31 @@ void loop() {
     int voltage = floatMap(analog_value, 0, 4095, 0, 360);
     M5.IMU.getAccelData(&accX, &accY, &accZ);
     M5.IMU.getGyroData(&gyroX, &gyroY, &gyroZ);
-    M5.Lcd.printf("Voltage= %ld",voltage);
-    M5.Lcd.println();
-    M5.Lcd.printf("accX:%7.2f accY:%7.2f accZ:%7.2f ", accX, accY, accZ);
-    M5.Lcd.println();
-    M5.Lcd.printf("gyroX:%7.2f gyroY:%7.2f gyroZ:%7.2f ", gyroX, gyroY, gyroZ);
-    M5.Lcd.println();
+
+    //UI-voltage
+    M5.Lcd.setCursor(65, 80);
+    M5.Lcd.println(voltage);
+
+    //UI-acc
+    M5.Lcd.setCursor(40, 40);
+    M5.Lcd.print(accX);
+
+    M5.Lcd.setCursor(90, 40);
+    M5.Lcd.print(accY);
+
+    M5.Lcd.setCursor(140, 40);
+    M5.Lcd.print(accZ);
+
+    //UI-gyro
+    M5.Lcd.setCursor(40, 65);
+    M5.Lcd.print(gyroX);
+
+    M5.Lcd.setCursor(90, 65);
+    M5.Lcd.print(gyroY);
+
+    M5.Lcd.setCursor(140, 65);
+    M5.Lcd.print(gyroZ);
+
     
     if (!client.connected()) 
     {
@@ -99,11 +149,11 @@ void loop() {
     client.loop();  // This function is called periodically to allow clients to
                     // process incoming messages and maintain connections to the
                     // server.
-unsigned long now =
-         millis();  // Obtain the host startup duration. 
-     if (now - lastMsg > 2000) {
-         lastMsg = now;
-         ++value;
+unsigned long now = millis();  // Obtain the host startup duration. 
+     
+    //  if (now - lastMsg > 2000) {
+        //  lastMsg = now;
+        //  ++value;
         snprintf(msg_voltage, MSG_BUFFER_SIZE," %ld",voltage);
         snprintf(msg_accX, MSG_BUFFER_SIZE," %7.2f",accX);
         snprintf(msg_accY, MSG_BUFFER_SIZE," %7.2f",accY);
@@ -111,46 +161,47 @@ unsigned long now =
         snprintf(msg_gyroX, MSG_BUFFER_SIZE," %7.2f",gyroX);
         snprintf(msg_gyroY, MSG_BUFFER_SIZE," %7.2f",gyroY);
         snprintf(msg_gyroZ, MSG_BUFFER_SIZE," %7.2f",gyroZ);
-M5.Lcd.print("Publish message: ");
-M5.Lcd.println(msg_voltage);
+
+//M5.Lcd.print("Publish message: ");
+//M5.Lcd.println(msg_voltage);
 client.publish(outtopic_voltage, msg_voltage);  // Publishes a message to the specified  topic.
 
-M5.Lcd.print("Publish message: ");
-M5.Lcd.println(msg_accX);
+//M5.Lcd.print("Publish message: ");
+//M5.Lcd.println(msg_accX);
 client.publish(outtopic_accX, msg_accX);
 client.publish(outtopic_accX, ",");
 
-M5.Lcd.print("Publish message: ");
-M5.Lcd.println(msg_accY);
+//M5.Lcd.print("Publish message: ");
+//M5.Lcd.println(msg_accY);
 client.publish(outtopic_accY, msg_accY);
 client.publish(outtopic_accY, ",");
 
-M5.Lcd.print("Publish message: ");
-M5.Lcd.println(msg_accZ);
+//M5.Lcd.print("Publish message: ");
+//M5.Lcd.println(msg_accZ);
 client.publish(outtopic_accZ, msg_accZ);
 client.publish(outtopic_accZ, ",");
 
-M5.Lcd.print("Publish message: ");
-M5.Lcd.println(msg_gyroX);
+//M5.Lcd.print("Publish message: ");
+//M5.Lcd.println(msg_gyroX);
 client.publish(outtopic_gyroX, msg_gyroX);
 client.publish(outtopic_gyroX, ",");
 
-M5.Lcd.print("Publish message: ");
-M5.Lcd.println(msg_gyroY);
+//M5.Lcd.print("Publish message: ");
+//M5.Lcd.println(msg_gyroY);
 client.publish(outtopic_gyroY, msg_gyroY);
 client.publish(outtopic_gyroY, ",");
 
-M5.Lcd.print("Publish message: ");
-M5.Lcd.println(msg_gyroZ);
+//M5.Lcd.print("Publish message: ");
+//M5.Lcd.println(msg_gyroZ);
 client.publish(outtopic_gyroZ, msg_gyroZ);
 client.publish(outtopic_gyroZ, ",");
             delay(500);
 
-         if (value %7 == 0) {
-           M5.Lcd.fillScreen(BLACK);
-            M5.Lcd.setCursor(0, 0);
-        }
-     }
+        //  if (value %7 == 0) {
+        //    M5.Lcd.fillScreen(BLACK);
+        //     M5.Lcd.setCursor(0, 0);
+        // }
+    //  }
 
      if (M5.BtnA.wasReleasefor(100)) {
         esp_restart();
@@ -159,9 +210,14 @@ client.publish(outtopic_gyroZ, ",");
       delay(100);  
 }
 
-void setupWifi() {
+void setupWifi() { 
     delay(10);
-    M5.Lcd.printf("Connecting to %s", ssid);
+    M5.Lcd.setCursor(95, 95);
+    M5.Lcd.println("%s", ssid);
+    //M5.Lcd.print("Wifi-Status : %s", ssid);
+    // M5.Lcd.setCursor(10, 70);
+    //M5.Lcd.println("Connected");
+    //M5.Lcd.printf("Connecting to %s", ssid);
     WiFi.mode(
         WIFI_STA);  // Set the mode to WiFi station mode.
     WiFi.begin(ssid, password);  // Start Wifi connection. 
@@ -170,7 +226,8 @@ void setupWifi() {
         delay(500);
         M5.Lcd.print(".");
     }
-    M5.Lcd.printf("\nSuccess\n");
+    M5.Lcd.setCursor(95, 95);
+    M5.Lcd.printf("Success");
 }
 void callback(char* intopic, byte* payload, unsigned int length) {
     //M5.Lcd.print("Message arrived [");
@@ -187,21 +244,30 @@ void callback(char* intopic, byte* payload, unsigned int length) {
     }
     Serial.println();
 
+    int angle_1, angle_2;
+    sscanf(array, "%d%d", &angle_1, &angle_2);
+    Serial.print("Angle: ");
+    Serial.println(angle_1);
+    Serial.println(angle_2);
+
+    //int x = atoi(array);
+
+
+
     float kp = 7;
     //float ki = 0.03;
     //float kd = 0.5;
     int curr_angle = analogRead(36);
     
-    Serial.print("angle_sub: ");
-    for(int i = 0; i < length; i++) {
-        // int test;
-        // test = atoi(array);
-        // Serial.printf("%ld", test);
-        Serial.print((int(array[i])+0)-48);
-    }
-        Serial.println();
-    //float degree = (curr_angle*360)/4096;
-    //error = angle_sub - degree;
+    // for(int i = 0; i < length; i++) {
+    //     // int test;
+    //     // test = atoi(array);
+    //     // Serial.printf("%ld", test);
+    //     Serial.print((int(array[i])+0)-48);
+    // }
+    //     Serial.println();
+    float degree = (curr_angle*360)/4096;
+    error = angle_1 - degree;
     curr_time = millis();
     //float ed = (error - prev_error)/(curr_time - prev_time)*0.001;
     //float eint = eint + error*(curr_time - prev_time)*0.001;
@@ -227,13 +293,17 @@ void callback(char* intopic, byte* payload, unsigned int length) {
 
 void reConnect() {
     while (!client.connected()) {
-        M5.Lcd.print("Attempting MQTT connection...");
         // Create a random client ID. 
+        M5.Lcd.setCursor(95, 110);
+        M5.Lcd.println("Attempting")
+        // M5.Lcd.setCursor(10, 70);
+        //M5.Lcd.println("Connected");
         String clientId = "MM5St-";
         clientId += String(random(0xffff), HEX);
         // Attempt to connect.
         if (client.connect(clientId.c_str())) {
-            M5.Lcd.printf("\nSuccess\n");
+            M5.Lcd.setCursor(95, 110);
+            M5.Lcd.printf("Success");
             // Once connected, publish an announcement to the topic.
             //client.publish("M5Stack", "hello world");
             // ... and resubscribe. 
@@ -242,9 +312,10 @@ void reConnect() {
             if (String("TEST/TESA") == "esp32/output") {
                 Serial.print("Changing output to ");}
         } else {
-            M5.Lcd.print("failed, rc=");
+            M5.Lcd.setCursor(95, 110);
+            M5.Lcd.print("Failed");
             M5.Lcd.print(client.state());
-            M5.Lcd.println("try again in 5 seconds");
+            //M5.Lcd.println("try again in 5 seconds");
             delay(5000);
         }
     }
