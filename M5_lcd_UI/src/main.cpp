@@ -26,57 +26,58 @@ int value = 0;
 void setup()
 {
     Serial.begin(115200);
-    // M5.begin();
-    // M5.Lcd.setRotation(3);
-    // M5.Lcd.setTextSize(1);
+    M5.begin();
+    M5.Lcd.setRotation(3);
+    M5.Lcd.setTextSize(1);
 
-    // M5.Lcd.drawRect(5, 5, 220, 120, BLUE);
+    M5.Lcd.drawRect(5, 5, 220, 120, BLUE);
+    M5.Lcd.drawRect(2, 2, 220, 120, PINK);
 
-    // M5.Lcd.setCursor(80, 10);
-    // M5.Lcd.println("BME RANGER 12");
+    M5.Lcd.setCursor(80, 10);
+    M5.Lcd.println("BME RANGER 12");
 
-    // M5.Lcd.setCursor(10, 30);
-    // M5.Lcd.println("Acclerometer");
-    // M5.Lcd.setCursor(10, 40);
-    // M5.Lcd.println("   X       Y       Z");
+    M5.Lcd.setCursor(10, 30);
+    M5.Lcd.println("Acclerometer");
+    M5.Lcd.setCursor(10, 40);
+    M5.Lcd.println("   X       Y       Z");
 
-    // M5.Lcd.setCursor(10, 55);
-    // M5.Lcd.println("Gyrometer");
-    // M5.Lcd.setCursor(10, 65);
-    // M5.Lcd.println("   X       Y       Z");
+    M5.Lcd.setCursor(10, 55);
+    M5.Lcd.println("Gyrometer");
+    M5.Lcd.setCursor(10, 65);
+    M5.Lcd.println("   X       Y       Z");
 
-    // M5.Lcd.setCursor(10, 80);
-    // M5.Lcd.print("Voltage:  ");
-    // M5.Lcd.println("350");
+    M5.Lcd.setCursor(10, 80);
+    M5.Lcd.print("Voltage:  ");
+    M5.Lcd.println("350");
 
-    // M5.Lcd.setCursor(10, 95);
-    // M5.Lcd.print("Wifi-Status :  ");
-    // // M5.Lcd.setCursor(10, 70);
-    // M5.Lcd.println("Connected");
+    M5.Lcd.setCursor(10, 95);
+    M5.Lcd.print("Wifi-Status :  ");
+    // M5.Lcd.setCursor(10, 70);
+    M5.Lcd.println("Connected");
 
-    // M5.Lcd.setCursor(10, 110);
-    // M5.Lcd.print("MQTT-Status :  ");
-    // // M5.Lcd.setCursor(10, 70);
-    // M5.Lcd.println("Connected");
+    M5.Lcd.setCursor(10, 110);
+    M5.Lcd.print("MQTT-Status :  ");
+    // M5.Lcd.setCursor(10, 70);
+    M5.Lcd.println("Connected");
 }
 
 void loop()
 {
-    // for (int i = 110; i <= 114; i++)
-    // {
-    //     // Serial.println(i);
+    for (int i = 110; i <= 114; i++)
+    {
+        // Serial.println(i);
 
-    //     M5.Lcd.setCursor(40, 40);
-    //     M5.Lcd.print(i);
+        M5.Lcd.setCursor(40, 40);
+        M5.Lcd.print(i);
 
-    //     M5.Lcd.setCursor(90, 40);
-    //     M5.Lcd.print(i);
+        M5.Lcd.setCursor(90, 40);
+        M5.Lcd.print(i);
 
-    //     M5.Lcd.setCursor(140, 40);
-    //     M5.Lcd.print(i);
+        M5.Lcd.setCursor(140, 40);
+        M5.Lcd.print(i);
 
-    //     delay(500);
-    // }
+        delay(500);
+    }
 
     char charvalue = '5';
     int number = ((int(charvalue) + 0) - 48);
