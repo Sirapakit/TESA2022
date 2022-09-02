@@ -19,7 +19,7 @@ Special thanks to [@Peachiia](https://www.github.com/peachiia) for guidance.
 Teach Teach
 <div align="center">
 	<br>
-	<a href="https://github.com/Sirapakit/TESA2022/blob/a0be454cb53b7532830b1a2752c24848eb81655f/custom.svg">
+	<a href="https://github.com/Sirapakit/TESA2022/blob/main/custom.svg">
 		<img src="header.svg" width="800" height="400" alt="Click to see the source">
 	</a>
 	<br>
