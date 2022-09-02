@@ -17,3 +17,20 @@ this repository will be use for competing "TESA2022 : Top Gun Rally" for members
 Special thanks to [@Peachiia](https://www.github.com/peachiia) for guidance.
 
 Teach Teach
+<div align="center">
+	<br>
+	<a href="https://github.com/Sirapakit/TESA2022/blob/a0be454cb53b7532830b1a2752c24848eb81655f/custom.svg">
+		<img src="header.svg" width="800" height="400" alt="Click to see the source">
+	</a>
+	<br>
+</div>
+
+
+
+<br>
+<br>
+<br>
+<br>
+<br>
+<br>
+Explanation: https://css-tricks.com/custom-styles-in-github-readmes/
