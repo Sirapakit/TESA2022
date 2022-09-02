@@ -20,7 +20,7 @@ void mqtt_wifi_init()
     const char *outtopic_gyroY = "gyro/Y";
     const char *outtopic_gyroZ = "gyro/Z";
     const char *intopic = "TEST/TESA";
-
+    /// add commit
     M5.Lcd.printf("Connecting to %s", ssid);
     WiFi.mode(WIFI_STA);        // Set the mode to WiFi station mode.
     WiFi.begin(ssid, password); // Start Wifi connection.
