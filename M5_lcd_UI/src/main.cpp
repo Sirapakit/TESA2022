@@ -36,14 +36,16 @@ bool sub_status = false;
 
 char array[50];
 
-void callback(char *intopic, byte *payload, unsigned int length);
 void setupWifi();
+void callback(char *intopic, byte *payload, unsigned int length);
+void reConnect();
 
 void mqtt_wifi_init()
 {
+    const char *mqtt_server = "10.13.8.163";
+
     setupWifi();
     // const char *mqtt_server = "tcp://0.tcp.ap.ngrok.io:17656";
-    const char *mqtt_server = "10.13.8.163";
     client.setServer(mqtt_server, 1883);
     client.setCallback(callback);
 }
@@ -160,8 +162,8 @@ void mqtt_reconnect()
         if (client.connect(clientId.c_str()))
         {
             M5.Lcd.setCursor(95, 110);
-            M5.Lcd.printf("Success");
             client.subscribe(intopic);
+            M5.Lcd.printf("Success");
 
             if (String("TEST/TESA") == "esp32/output")
             {
@@ -199,33 +201,40 @@ void mqtt_pub()
         client.publish(outtopic_gyroY, msg_gyroY);
         client.publish(outtopic_gyroZ, msg_gyroZ);
 
+        client.loop();
         now = millis();
     }
 }
 
-void callback(char *intopic, byte *payload, unsigned int length) // use to get message from publisher
+void callback(char *intopic, byte *payload, unsigned int length)
 {
+
+    Serial.println("Callback");
 
     for (int i = 0; i < length; i++)
     {
         array[i] = ((char)payload[i]);
+        Serial.println((char)payload[i]);
+        Serial.println(array[i]);
     }
-    sub_status = true;
+    // sub_status = true;
 }
 
 void mqtt_sub()
 {
-    if (sub_status == true)
-    {
-        sscanf(array, "%d%d", &angle_servo_1, &angle_servo_2);
-        Serial.print("Angle1: ");
-        Serial.println(angle_servo_1);
-        Serial.print("Angle2: ");
-        Serial.println(angle_servo_2);
-        // do smth
-        // decode
-        sub_status = false;
-    }
+    // if (sub_status = true)
+    // {
+    // Serial.println("MQTT_SUB");
+    // Serial.println(array);
+    sscanf(array, "%d%d", &angle_servo_1, &angle_servo_2);
+    Serial.print("Angle1: ");
+    Serial.println(angle_servo_1);
+    Serial.print("Angle2: ");
+    Serial.println(angle_servo_2);
+    // do smth
+    // decode
+    // sub_status = false;
+    // }
 }
 
 void adc_read_task()
@@ -245,6 +254,7 @@ void setup()
     lcd_init();
     mqtt_wifi_init();
     imu_init();
+    // client.setCallback(callback);
 }
 
 void loop()
@@ -260,24 +270,24 @@ void loop()
     }
     case 1:
     {
-        imu_task();
+        mqtt_sub();
         break;
     }
     case 2:
     {
-        lcd_task();
+        imu_task();
         break;
     }
     case 3:
     {
+        lcd_task();
+        break;
+    }
+    case 4:
+    {
         mqtt_pub();
         break;
     }
-    // case 4:
-    // {
-    //     mqtt_sub();
-    //     break;
-    // }
     // case 5:
     // {
     // adc_read_task();
