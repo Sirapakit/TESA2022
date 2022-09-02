@@ -225,13 +225,13 @@ void callback(char *intopic, byte *payload, unsigned int length)
         //Serial.println((char)payload[i]);
         //Serial.println(array[i]);
     }
-    // sub_status = true;
+    sub_status = true;
 }
 
 void mqtt_sub()
 {
-    // if (sub_status = true)
-    // {
+    if (sub_status = true)
+    {
     // Serial.println("MQTT_SUB");
     // Serial.println(array);
     sscanf(array, "%d%d", &angle_servo_1, &angle_servo_2);
@@ -241,12 +241,13 @@ void mqtt_sub()
     // Serial.println(angle_servo_2);
     // do smth
     // decode
-    // sub_status = false;
-    // }
+    sub_status = false;
+    } 
 }
 
 void servo_motor_init()
 {
+    Wire.begin(32,33);
     pwm.begin();
     pwm.setPWMFreq(60);
 
@@ -254,24 +255,24 @@ void servo_motor_init()
 
 void servo_motor()
 {
-    servomin1 = 0;
+    servomin1 = 125;
     servomin2 = 0;
     servomax1 = angle_servo_1;
-    Serial.print("servomax1");
+    Serial.print("servomax1: ");
     Serial.println(servomax1);
     servomax2 = angle_servo_2;
-    Serial.print("servomax2");
+    Serial.print("servomax2: ");
     Serial.println(servomax2);
-    for (uint16_t pulselen = servomin1; pulselen < servomax1; pulselen++) {
-    pwm.setPWM(0, 0, pulselen);
-    pwm.setPWM(1, 0, pulselen);
-  }
+    // for (int pulselen = servomin1; pulselen <= servomax1; pulselen++) {
+        // pwm.setPWM(0, 0, pulselen);
+        pwm.setPWM(0, 0, servomax1);
 
-  delay(500);
-  for (uint16_t pulselen = servomax1; pulselen > servomin1; pulselen--) {
-    pwm.setPWM(0, 0, pulselen);
-    pwm.setPWM(1, 0, pulselen);
-  }
+    // }
+
+    // for (int pulselen = servomin2; pulselen <= servomax2; pulselen++) {
+        // pwm.setPWM(1, 0, pulselen);
+    pwm.setPWM(1, 0, servomax2);
+    // }
 
   delay(500);
 }
