@@ -7,156 +7,289 @@
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-// Requirement
-// 6 IMU --> Acc, Gyro X, Y, Z
-// Wifi, MQTT Status
+const char *outtopic_voltage = "Voltage";
+const char *outtopic_accX = "acc/X";
+const char *outtopic_accY = "acc/Y";
+const char *outtopic_accZ = "acc/Z";
+const char *outtopic_gyroX = "gyro/X";
+const char *outtopic_gyroY = "gyro/Y";
+const char *outtopic_gyroZ = "gyro/Z";
+const char *intopic = "TEST/TESA";
 
-unsigned long lastMsg = 0;
-int value = 0;
+#define MSG_BUFFER_SIZE (50)
+char msg_voltage[MSG_BUFFER_SIZE];
+char msg_accX[MSG_BUFFER_SIZE];
+char msg_accY[MSG_BUFFER_SIZE];
+char msg_accZ[MSG_BUFFER_SIZE];
+char msg_gyroX[MSG_BUFFER_SIZE];
+char msg_gyroY[MSG_BUFFER_SIZE];
+char msg_gyroZ[MSG_BUFFER_SIZE];
+
+float accX, accY, accZ;
+float gyroX, gyroY, gyroZ;
+
+int Voltage = 50;
+int angle_servo_1, angle_servo_2;
+
+bool wifi_status = false;
+bool sub_status = false;
+
+char array[50];
+
+void callback(char *intopic, byte *payload, unsigned int length);
+void setupWifi();
+
+void mqtt_wifi_init()
+{
+    setupWifi();
+    // const char *mqtt_server = "tcp://0.tcp.ap.ngrok.io:17656";
+    const char *mqtt_server = "10.13.8.163";
+    client.setServer(mqtt_server, 1883);
+    client.setCallback(callback);
+}
+
+void setupWifi()
+{
+    const char *ssid = "catsvn";
+    // const char *ssid = "BCI LAB 2.4";
+    // const char *password = "bcimemberonly";
+    const char *password = "catsvn2000";
+
+    delay(10);
+    M5.Lcd.setCursor(95, 95);
+    M5.Lcd.print(ssid);
+    WiFi.mode(WIFI_STA); // Set the mode to WiFi station mode.
+
+    WiFi.begin(ssid, password); // Start Wifi connection.
+
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        delay(500);
+        M5.Lcd.print(".");
+    }
+    M5.Lcd.setCursor(95, 95);
+    M5.Lcd.printf("Success");
+
+    wifi_status = true;
+}
+
+void imu_init()
+{
+    M5.IMU.Init();
+}
+
+void imu_task()
+{
+    M5.IMU.getAccelData(&accX, &accY, &accZ);
+    M5.IMU.getGyroData(&gyroX, &gyroY, &gyroZ);
+}
+
+void lcd_init()
+{
+    M5.begin();
+    M5.lcd.fillScreen(BLACK);
+    M5.Lcd.setRotation(3);
+    M5.Lcd.setTextSize(1);
+
+    M5.Lcd.drawRect(5, 5, 220, 120, BLUE);
+    M5.Lcd.drawRect(2, 2, 220, 120, PINK);
+
+    M5.Lcd.setCursor(80, 10);
+    M5.Lcd.println("BME RANGER 12");
+
+    M5.Lcd.setCursor(10, 30);
+    M5.Lcd.println("Acclerometer");
+    M5.Lcd.setCursor(10, 40);
+    M5.Lcd.println("   X       Y       Z");
+
+    M5.Lcd.setCursor(10, 55);
+    M5.Lcd.println("Gyrometer");
+    M5.Lcd.setCursor(10, 65);
+    M5.Lcd.println("   X       Y       Z");
+
+    M5.Lcd.setCursor(10, 80);
+    M5.Lcd.print("Voltage:  ");
+
+    M5.Lcd.setCursor(10, 95);
+    M5.Lcd.print("Wifi-Status :  ");
+
+    M5.Lcd.setCursor(10, 110);
+    M5.Lcd.print("MQTT-Status :  ");
+}
+
+void lcd_task()
+{
+
+    // UI-voltage
+    M5.Lcd.setCursor(65, 80);
+    M5.Lcd.println(Voltage);
+
+    // UI-acc
+    M5.Lcd.setCursor(40, 40);
+    M5.Lcd.print(accX);
+
+    M5.Lcd.setCursor(90, 40);
+    M5.Lcd.print(accY);
+
+    M5.Lcd.setCursor(140, 40);
+    M5.Lcd.print(accZ);
+
+    // UI-gyro
+    M5.Lcd.setCursor(40, 65);
+    M5.Lcd.print(gyroX);
+
+    M5.Lcd.setCursor(90, 65);
+    M5.Lcd.print(gyroY);
+
+    M5.Lcd.setCursor(140, 65);
+    M5.Lcd.print(gyroZ);
+
+    delay(1000);
+}
+
+void mqtt_reconnect()
+{
+    while (!client.connected())
+    {
+        M5.Lcd.setCursor(95, 110);
+        M5.Lcd.println("Attempting");
+
+        String clientId = "MM5St-";
+        clientId += String(random(0xffff), HEX);
+
+        if (client.connect(clientId.c_str()))
+        {
+            M5.Lcd.setCursor(95, 110);
+            M5.Lcd.printf("Success");
+            client.subscribe(intopic);
+
+            if (String("TEST/TESA") == "esp32/output")
+            {
+                Serial.print("Changing output to ");
+            }
+        }
+        else
+        {
+            M5.Lcd.setCursor(95, 110);
+            M5.Lcd.print("Failed");
+
+            delay(5000);
+        }
+    }
+}
+
+void mqtt_pub()
+{
+    static long now = millis();
+    if (millis() - now >= 1000)
+    {
+        snprintf(msg_voltage, MSG_BUFFER_SIZE, " %d", Voltage);
+        snprintf(msg_accX, MSG_BUFFER_SIZE, " %7.2f", accX);
+        snprintf(msg_accY, MSG_BUFFER_SIZE, " %7.2f", accY);
+        snprintf(msg_accZ, MSG_BUFFER_SIZE, " %7.2f", accZ);
+        snprintf(msg_gyroX, MSG_BUFFER_SIZE, " %7.2f", gyroX);
+        snprintf(msg_gyroY, MSG_BUFFER_SIZE, " %7.2f", gyroY);
+        snprintf(msg_gyroZ, MSG_BUFFER_SIZE, " %7.2f", gyroZ);
+
+        client.publish(outtopic_voltage, msg_voltage);
+        client.publish(outtopic_accX, msg_accX);
+        client.publish(outtopic_accY, msg_accY);
+        client.publish(outtopic_accZ, msg_accZ);
+        client.publish(outtopic_gyroX, msg_gyroX);
+        client.publish(outtopic_gyroY, msg_gyroY);
+        client.publish(outtopic_gyroZ, msg_gyroZ);
+
+        now = millis();
+    }
+}
+
+void callback(char *intopic, byte *payload, unsigned int length) // use to get message from publisher
+{
+
+    for (int i = 0; i < length; i++)
+    {
+        array[i] = ((char)payload[i]);
+    }
+    sub_status = true;
+}
+
+void mqtt_sub()
+{
+    if (sub_status == true)
+    {
+        sscanf(array, "%d%d", &angle_servo_1, &angle_servo_2);
+        Serial.print("Angle1: ");
+        Serial.println(angle_servo_1);
+        Serial.print("Angle2: ");
+        Serial.println(angle_servo_2);
+        // do smth
+        // decode
+        sub_status = false;
+    }
+}
+
+void adc_read_task()
+{
+    static int pot_value = analogRead(36);
+    long now;
+    if (millis() - now >= 100)
+    {
+        // do something
+        Serial.println("Now = ");
+        now = millis();
+    }
+}
 
 void setup()
 {
-    Serial.begin(115200);
+    lcd_init();
+    mqtt_wifi_init();
+    imu_init();
 }
 
 void loop()
 {
-    for (int i = 110; i <= 114; i++)
+    static int state = 0;
+
+    switch (state)
     {
-        // Serial.println(i);
-
-        M5.Lcd.setCursor(40, 40);
-        M5.Lcd.print(i + 57);
-
-        M5.Lcd.setCursor(90, 40);
-        M5.Lcd.print(i + 67);
-
-        M5.Lcd.setCursor(140, 40);
-        M5.Lcd.print(i - 4);
-
-        M5.Lcd.setCursor(40, 65);
-        M5.Lcd.print(i + 45);
-
-        M5.Lcd.setCursor(90, 65);
-        M5.Lcd.print(i + 569);
-
-        M5.Lcd.setCursor(140, 65);
-        M5.Lcd.print(i + 137);
-
-        // Voltage
-        M5.Lcd.setCursor(65, 80);
-        M5.Lcd.println(i);
-
-        // Wifi-Status
-        M5.Lcd.setCursor(95, 95);
-        M5.Lcd.println(i);
-
-        // MqTT Status
-        M5.Lcd.setCursor(95, 110);
-        M5.Lcd.println(i);
-
-        delay(500);
+    case 0:
+    {
+        mqtt_reconnect();
+        break;
     }
-
-    char charvalue = '5';
-    int number = ((int(charvalue) + 0) - 48);
-
-    int numVal[] = {1, 3, 7, 9, '\0'};
-
-    char text[] = "135 987";
-
-    int x, y;
-    sscanf(text, "%d%d", &x, &y);
-    Serial.print("text to int: ");
-    // Serial.println(x);
-    // Serial.println(y);
-
-    // int x = atoi(numVal);
-
-    // int numValue = 1379;
-    // int *pointNum;
-
-    // pointNum = &numValue;
-
-    // Serial.print("Number value: ");
-    // Serial.println(*pointNum);
-
-    // M5.Lcd.printf("Voltage= 999");
-    // M5.Lcd.println();
-    // M5.Lcd.printf("accX: 0.5 accY: 0.5 accZ: 0.5 ");
-    // M5.Lcd.println();
-    // M5.Lcd.printf("gyroX: 0.5 gyroY: 0.5 gyroZ: 0.5 ");
-    // M5.Lcd.println();
-
-    // unsigned long now = millis();
-    // if (now - lastMsg > 2000)
+    case 1:
+    {
+        imu_task();
+        break;
+    }
+    case 2:
+    {
+        lcd_task();
+        break;
+    }
+    case 3:
+    {
+        mqtt_pub();
+        break;
+    }
+    // case 4:
     // {
-    //     lastMsg = now;
-    //     ++value;
-
-    //     M5.Lcd.print("Publish message: ");
-    //     M5.Lcd.println("msg_voltage");
-
-    //     M5.Lcd.print("Publish message: ");
-    //     M5.Lcd.println("msg_accX");
-
-    //     M5.Lcd.print("Publish message: ");
-    //     M5.Lcd.println("msg_accY");
-
-    //     M5.Lcd.print("Publish message: ");
-    //     M5.Lcd.println("msg_accZ");
-
-    //     M5.Lcd.print("Publish message: ");
-    //     M5.Lcd.println("msg_gyroX");
-
-    //     M5.Lcd.print("Publish message: ");
-    //     M5.Lcd.println("msg_gyroY");
-
-    //     M5.Lcd.print("Publish message: ");
-    //     M5.Lcd.println("msg_gyroZ");
-
-    //     delay(500);
-
-    //     if (value % 7 == 0)
-    //     {
-    //         M5.Lcd.fillScreen(BLACK);
-    //         M5.Lcd.setCursor(0, 0);
-    //     }
+    //     mqtt_sub();
+    //     break;
     // }
-
-    // if (M5.BtnA.wasReleasefor(100))
+    // case 5:
     // {
-    //     esp_restart();
+    // adc_read_task();
+    // break;
     // }
-    // M5.update(); // Detect whether the keystroke state has changed.
-    // delay(100);
-}
-
-void callback(char *intopic, byte *payload, unsigned int length)
-{
-
-    const int max_array = 50;
-    const char *angle_sub[max_array];
-    int count = 0;
-    char array[50];
-
-    for (int i = 0; i < length; i++)
+    default:
     {
-        Serial.print((char)payload[i]);
-        array[i] = ((char)payload[i]);
+        state = 0;
+        break;
     }
-    Serial.println();
-
-    float kp = 7;
-
-    int curr_angle = analogRead(36);
-
-    Serial.print("angle_sub: ");
-    for (int i = 0; i < length; i++)
-    {
-        Serial.print((int(array[i]) + 0) - 48);
     }
-    Serial.println();
-
-    delay(1000);
+    // }
+    state++;
+    // reset_button_task();
 }
