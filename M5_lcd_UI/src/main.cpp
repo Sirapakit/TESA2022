@@ -79,16 +79,16 @@ void loop()
         delay(500);
     }
 
-    char charvalue = '5';
-    int number = ((int(charvalue) + 0) - 48);
+    // char charvalue = '5';
+    // int number = ((int(charvalue) + 0) - 48);
 
-    int numValue = 1379;
-    int *pointNum;
+    // int numValue = 1379;
+    // int *pointNum;
 
-    pointNum = &numValue;
+    // pointNum = &numValue;
 
-    Serial.print("Number value: ");
-    Serial.println(*pointNum);
+    // Serial.print("Number value: ");
+    // Serial.println(*pointNum);
 
     // M5.Lcd.printf("Voltage= 999");
     // M5.Lcd.println();
