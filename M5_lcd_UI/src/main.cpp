@@ -143,7 +143,6 @@ void lcd_task()
     M5.Lcd.setCursor(90, 65);
     M5.Lcd.print(gyroY);
 
-
     M5.Lcd.setCursor(140, 65);
     M5.Lcd.print(gyroZ);
 
@@ -215,9 +214,11 @@ void callback(char *intopic, byte *payload, unsigned int length)
     for (int i = 0; i < length; i++)
     {
         array[i] = ((char)payload[i]);
-        Serial.println((char)payload[i]);
-        Serial.println(array[i]);
+        // Serial.println((char)payload[i]);
+        // Serial.println(array[i]);
     }
+    Serial.println();
+
     // sub_status = true;
 }
 
