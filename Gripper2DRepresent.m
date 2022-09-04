@@ -26,13 +26,13 @@ while(1)
     if ang1>0 && ang2 >0 && ang1<90 && ang2<90
     L =6;
     
-    x = 0
-    y = 0
+    x = 0;
+    y = 0;
     xi2=x+(L*cosd(ang1));
     yi2=y+(L*sind(ang1));
 
-    xt2=x+(L*sind(alpha));
-    yt2=y+(L*cosd(alpha));
+    xt2=x+(L*sind(ang));
+    yt2=y+(L*cosd(ang2));
     line([x, xi2], [y,yi2], 'Color', 'r', 'LineWidth', 2);
     hold on
     line([x xt2], [y,yt2], 'Color', 'b', 'LineWidth', 2);
