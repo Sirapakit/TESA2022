@@ -3,9 +3,11 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <analogWrite.h>
+#include <Adafruit_PWMServoDriver.h>
 
 WiFiClient espClient;
 PubSubClient client(espClient);
+Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
 const char *outtopic_voltage = "Voltage";
 const char *outtopic_accX = "acc/X";
@@ -28,7 +30,7 @@ char msg_gyroZ[MSG_BUFFER_SIZE];
 float accX, accY, accZ;
 float gyroX, gyroY, gyroZ;
 
-int Voltage = 50;
+int Voltage;
 int angle_servo_1, angle_servo_2;
 
 bool wifi_status = false;
@@ -36,16 +38,19 @@ bool sub_status = false;
 
 char array[50];
 
+int SERVO_1, SERVO_2;
+
 void setupWifi();
 void callback(char *intopic, byte *payload, unsigned int length);
 void reConnect();
 
 void mqtt_wifi_init()
 {
-    const char *mqtt_server = "10.13.8.163";
-
-    setupWifi();
+    // const char *mqtt_server = "10.13.8.163";
+    const char *mqtt_server = "10.13.8.180";
+    // const char *mqtt_server = "broker.hivemq.com";
     // const char *mqtt_server = "tcp://0.tcp.ap.ngrok.io:17656";
+    setupWifi();
     client.setServer(mqtt_server, 1883);
     client.setCallback(callback);
 }
@@ -53,9 +58,9 @@ void mqtt_wifi_init()
 void setupWifi()
 {
     const char *ssid = "catsvn";
-    // const char *ssid = "BCI LAB 2.4";
-    // const char *password = "bcimemberonly";
     const char *password = "catsvn2000";
+    // const char *ssid = "BCILAB 2.4";
+    // const char *password = "bcimemberonly";
 
     delay(10);
     M5.Lcd.setCursor(95, 95);
@@ -121,12 +126,9 @@ void lcd_init()
 
 void lcd_task()
 {
-
-    // UI-voltage
     M5.Lcd.setCursor(65, 80);
     M5.Lcd.println(Voltage);
 
-    // UI-acc
     M5.Lcd.setCursor(40, 40);
     M5.Lcd.print(accX);
 
@@ -136,7 +138,6 @@ void lcd_task()
     M5.Lcd.setCursor(140, 40);
     M5.Lcd.print(accZ);
 
-    // UI-gyro
     M5.Lcd.setCursor(40, 65);
     M5.Lcd.print(gyroX);
 
@@ -174,7 +175,6 @@ void mqtt_reconnect()
         {
             M5.Lcd.setCursor(95, 110);
             M5.Lcd.print("Failed");
-
             delay(5000);
         }
     }
@@ -192,7 +192,6 @@ void mqtt_pub()
         snprintf(msg_gyroX, MSG_BUFFER_SIZE, " %7.2f", gyroX);
         snprintf(msg_gyroY, MSG_BUFFER_SIZE, " %7.2f", gyroY);
         snprintf(msg_gyroZ, MSG_BUFFER_SIZE, " %7.2f", gyroZ);
-
         client.publish(outtopic_voltage, msg_voltage);
         client.publish(outtopic_accX, msg_accX);
         client.publish(outtopic_accY, msg_accY);
@@ -200,7 +199,6 @@ void mqtt_pub()
         client.publish(outtopic_gyroX, msg_gyroX);
         client.publish(outtopic_gyroY, msg_gyroY);
         client.publish(outtopic_gyroZ, msg_gyroZ);
-
         client.loop();
         now = millis();
     }
@@ -208,47 +206,63 @@ void mqtt_pub()
 
 void callback(char *intopic, byte *payload, unsigned int length)
 {
-
-    Serial.println("Callback");
-
     for (int i = 0; i < length; i++)
     {
         array[i] = ((char)payload[i]);
-        // Serial.println((char)payload[i]);
-        // Serial.println(array[i]);
     }
-    Serial.println();
-
-    // sub_status = true;
+    sub_status = true;
 }
 
 void mqtt_sub()
 {
-    // if (sub_status = true)
-    // {
-    // Serial.println("MQTT_SUB");
-    // Serial.println(array);
-    sscanf(array, "%d%d", &angle_servo_1, &angle_servo_2);
-    Serial.print("Angle1: ");
-    Serial.println(angle_servo_1);
-    Serial.print("Angle2: ");
-    Serial.println(angle_servo_2);
-    // do smth
-    // decode
-    // sub_status = false;
-    // }
+    if (sub_status == false)
+    {
+        array[0] = {'\0'};
+    }
+    else
+    {
+        Serial.print(array);
+        sscanf(array, "%d%d", &angle_servo_1, &angle_servo_2);
+        sub_status = false;
+    }
+}
+
+void servo_motor_init()
+{
+    Wire.begin(32, 33);
+    pwm.begin();
+    pwm.setPWMFreq(60);
+}
+
+void servo_motor()
+{
+    SERVO_1 = angle_servo_1;
+    SERVO_2 = angle_servo_2;
+    pwm.setPWM(0, 0, SERVO_1);
+    pwm.setPWM(1, 0, SERVO_2);
 }
 
 void adc_read_task()
 {
     static int pot_value = analogRead(36);
-    long now;
+    static long now;
     if (millis() - now >= 100)
     {
-        // do something
-        Serial.println("Now = ");
+        pot_value = Voltage;
         now = millis();
     }
+}
+
+void reset_button_task()
+{
+    if (M5.BtnB.pressedFor(1000))
+    {
+        Serial.println("Restart in 3 seconds...");
+        M5.Lcd.fillScreen(PINK);
+        delay(3000);
+        esp_restart();
+    }
+    M5.update();
 }
 
 void setup()
@@ -256,7 +270,7 @@ void setup()
     lcd_init();
     mqtt_wifi_init();
     imu_init();
-    // client.setCallback(callback);
+    servo_motor_init();
 }
 
 void loop()
@@ -277,31 +291,35 @@ void loop()
     }
     case 2:
     {
-        imu_task();
+        servo_motor();
         break;
     }
     case 3:
     {
-        lcd_task();
+        imu_task();
         break;
     }
     case 4:
     {
+        lcd_task();
+        break;
+    }
+    case 5:
+    {
         mqtt_pub();
         break;
     }
-    // case 5:
-    // {
-    // adc_read_task();
-    // break;
-    // }
+    case 6:
+    {
+        adc_read_task();
+        break;
+    }
     default:
     {
         state = 0;
         break;
     }
     }
-    // }
     state++;
-    // reset_button_task();
+    reset_button_task();
 }
