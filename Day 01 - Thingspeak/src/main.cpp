@@ -10,7 +10,7 @@
 WiFiClient espClient;
 PubSubClient client(espClient);
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
-Adafruit_ADS1015 ads;
+Adafruit_ADS1115 ads;
 
 int PWM_FREQ = 60;
 int SERVO_MAX = 400;
@@ -100,10 +100,10 @@ void mqtt_reconnect()
       // client.subscribe(intopic);
       M5.Lcd.printf("Success");
 
-      if (String("TEST/TESA") == "esp32/output")
-      {
-        Serial.print("Changing output to ");
-      }
+      // if (String("TEST/TESA") == "esp32/output")
+      // {
+      //   Serial.print("Changing output to ");
+      // }
     }
     else
     {
@@ -387,21 +387,16 @@ void loop()
   }
   case 3:
   {
-    adc_read();
+    // adc_read();
     // servo_lock_algo();
     break;
   }
   case 4:
   {
-    // servo_motor();
+    lcd_task();
     break;
   }
   case 5:
-  {
-    // servo_motor();
-    break;
-  }
-  case 6:
   {
     mqtt_pub();
     break;
