@@ -5,9 +5,11 @@
 #include <Wifi.h>
 #include <Wire.h>
 #include <Adafruit_ADS1x15.h>
+#include <PubSubClient.h>
 
+WiFiClient espClient;
+PubSubClient client(espClient);
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
-Adafruit_PWMServoDriver myServo = Adafruit_PWMServoDriver();
 Adafruit_ADS1015 ads;
 
 int PWM_FREQ = 60;
@@ -27,21 +29,24 @@ int Voltage;
 
 bool lcd_state = false;
 
-#define MSG_BUFFER_SIZE (50)
-char msg_poten_0[MSG_BUFFER_SIZE];
-char msg_poten_1[MSG_BUFFER_SIZE];
-char msg_poten_2[MSG_BUFFER_SIZE];
-char msg_poten_3[MSG_BUFFER_SIZE];
-char msg_accZ[MSG_BUFFER_SIZE];
+const char *outtopic = "channels/1850319/publish";
 
-const char *outtopic_pot0 = "channels/1850319/publish/Pot_0";
-const char *outtopic_pot1 = "channels/1850319/publish/Pot_1";
-const char *outtopic_pot2 = "channels/1850319/publish/Pot_2";
-const char *outtopic_pot3 = "channels/1850319/publish/Pot_3";
-const char *outtopic_accZ = "channels/1850319/publish/accZ";
+#define MSG_BUFFER_SIZE (200)
+char msg_poten_0[MSG_BUFFER_SIZE];
+// char msg_poten_1[MSG_BUFFER_SIZE];
+// char msg_poten_2[MSG_BUFFER_SIZE];
+// char msg_poten_3[MSG_BUFFER_SIZE];
+char msg_accZ[MSG_BUFFER_SIZE];
+char msg_outtopic[MSG_BUFFER_SIZE];
+
+// const char *outtopic_pot0 = "channels/1850319/publish/Pot_0";
+// const char *outtopic_pot1 = "channels/1850319/publish/Pot_1";
+// const char *outtopic_pot2 = "channels/1850319/publish/Pot_2";
+// const char *outtopic_pot3 = "channels/1850319/publish/Pot_3";
+// const char *outtopic_accZ = "channels/1850319/publish/accZ";
 
 void setupWifi();
-void callback(char *intopic, byte *payload, unsigned int length);
+// void callback(char *intopic, byte *payload, unsigned int length);
 void reConnect();
 
 void mqtt_wifi_init()
@@ -53,14 +58,15 @@ void mqtt_wifi_init()
   // const char *mqtt_server = "tcp://0.tcp.ap.ngrok.io:17656";
   setupWifi();
   client.setServer(mqtt_server, 1883);
-  client.setCallback(callback);
+  // client.setCallback(callback);
 }
 
 void setupWifi()
 {
-  const char *ssid = "Wifi ของ korrawiz";
-  const char *password = "korrawiz";
-
+  // const char *ssid = "Wifi ของ korrawiz";
+  // const char *password = "korrawiz";
+  const char *ssid = "Redmi999";
+  const char *password = "11111111";
   delay(50);
   M5.Lcd.setCursor(95, 95);
   M5.Lcd.print(ssid);
@@ -79,15 +85,16 @@ void setupWifi()
 
 void mqtt_reconnect()
 {
-  const char *SECRET_MQTT_CLIENT_ID = "Dzc0JB4oOCkJBhE2MgwfCic";
-  const char *mqttUser = "Dzc0JB4oOCkJBhE2MgwfCic";
-  const char *mqttPassword = "uAPsxtWtFq8YkWU1gXodMpIF";
+  // const char *SECRET_MQTT_CLIENT_ID = "Dzc0JB4oOCkJBhE2MgwfCic";
+  // const char *mqttUser = "Dzc0JB4oOCkJBhE2MgwfCic";
+  // const char *mqttPassword = "uAPsxtWtFq8YkWU1gXodMpIF";
   while (!client.connected())
   {
     M5.Lcd.setCursor(95, 110);
     M5.Lcd.println("Attempting");
 
-    if (client.connect(SECRET_MQTT_CLIENT_ID, mqttUser, mqttPassword))
+    // if (client.connect(SECRET_MQTT_CLIENT_ID, mqttUser, mqttPassword))
+    if (client.connect("Dzc0JB4oOCkJBhE2MgwfCic", "Dzc0JB4oOCkJBhE2MgwfCic", "uAPsxtWtFq8YkWU1gXodMpIF"))
     {
       M5.Lcd.setCursor(95, 110);
       // client.subscribe(intopic);
@@ -110,36 +117,42 @@ void mqtt_reconnect()
 void mqtt_pub()
 {
   static long now;
-  if (millis() - now >= delay_mqtt_pub)
+  if (millis() - now >= 5000)
   {
-    snprintf(msg_voltage, MSG_BUFFER_SIZE, " %d", Voltage);
-    snprintf(msg_accX, MSG_BUFFER_SIZE, " %7.2f", accX);
-    snprintf(msg_accY, MSG_BUFFER_SIZE, " %7.2f", accY);
-    snprintf(msg_accZ, MSG_BUFFER_SIZE, " %7.2f", accZ);
-    snprintf(msg_gyroX, MSG_BUFFER_SIZE, " %7.2f", gyroX);
-    snprintf(msg_gyroY, MSG_BUFFER_SIZE, " %7.2f", gyroY);
-    snprintf(msg_gyroZ, MSG_BUFFER_SIZE, " %7.2f", gyroZ);
-    client.publish(outtopic_voltage, msg_voltage);
-    client.publish(outtopic_accX, msg_accX);
-    client.publish(outtopic_accY, msg_accY);
-    client.publish(outtopic_accZ, msg_accZ);
-    client.publish(outtopic_gyroX, msg_gyroX);
-    client.publish(outtopic_gyroY, msg_gyroY);
-    client.publish(outtopic_gyroZ, msg_gyroZ);
+    // snprintf(msg_poten_0, MSG_BUFFER_SIZE, " %d", percentage_0);
+    // snprintf(msg_poten_1, MSG_BUFFER_SIZE, " %d", percentage_1);
+    // snprintf(msg_poten_2, MSG_BUFFER_SIZE, " %d", percentage_2);
+    // snprintf(msg_poten_3, MSG_BUFFER_SIZE, " %d", percentage_3);
+    // snprintf(msg_accZ, MSG_BUFFER_SIZE, " %7.2f", accZ);
+
+    // snprintf(msg_poten_0, MSG_BUFFER_SIZE, " %d", 100);
+    // snprintf(msg_poten_1, MSG_BUFFER_SIZE, " %d", 111);
+    // snprintf(msg_poten_2, MSG_BUFFER_SIZE, " %d", 222);
+    // snprintf(msg_poten_3, MSG_BUFFER_SIZE, " %d", 333);
+    // char payload[100];
+
+    sprintf(msg_outtopic, "field1=100&field2=111&field3=222&field4=333&field5=%7.2f&status=MQTTPUBLISH", accZ);
+    client.publish(outtopic, msg_outtopic);
+
+    // client.publish(outtopic_pot0, msg_poten_0);
+    // client.publish(outtopic_pot1, msg_poten_1);
+    // client.publish(outtopic_pot2, msg_poten_2);
+    // client.publish(outtopic_pot3, msg_poten_3);
+    // client.publish(outtopic_accZ, msg_accZ);
 
     client.loop();
     now = millis();
   }
 }
 
-void callback(char *intopic, byte *payload, unsigned int length)
-{
-  for (int i = 0; i < length; i++)
-  {
-    array_from_payload[i] = ((char)payload[i]);
-  }
-  sub_status = true;
-}
+// void callback(char *intopic, byte *payload, unsigned int length)
+// {
+//   for (int i = 0; i < length; i++)
+//   {
+//     array_from_payload[i] = ((char)payload[i]);
+//   }
+//   sub_status = true;
+// }
 
 void ads_init()
 {
@@ -153,45 +166,44 @@ void ads_init()
 
 void IMU_init()
 {
-  M5.begin();
   M5.IMU.Init();
-  M5.IMU.getGyroData(&gyroX, &gyroY, &gyroZ);
-  M5.IMU.getAccelData(&accX, &accY, &accZ);
   Serial.begin(115200);
 }
 
 void IMU_acc_task()
 {
-  static long now_acc;
-  if (millis() - now_acc >= delay_IMU_acc_task)
-  {
-    Serial.print("AccX:");
-    Serial.println(accX);
-    Serial.print("AccY:");
-    Serial.println(accY);
-    Serial.print("AccZ:");
-    Serial.println(accZ);
+  M5.IMU.getAccelData(&accX, &accY, &accZ);
+  // static long now_acc;
+  // if (millis() - now_acc >= delay_IMU_acc_task)
+  // {
+  //   Serial.print("AccX:");
+  //   Serial.println(accX);
+  //   Serial.print("AccY:");
+  //   Serial.println(accY);
+  //   Serial.print("AccZ:");
+  //   Serial.println(accZ);
 
-    now_acc = millis();
-  }
+  //   now_acc = millis();
+  // }
 }
 
 void IMU_gyro_task()
 {
-  static long now_gyro;
-  if (millis() - now_gyro >= delay_IMU_gyro_task)
-  {
-    // Serial.print("gyroX:");
-    // Serial.println(gyroX);
-    // Serial.print("gyroY:");
-    // Serial.println(gyroY);
-    // Serial.print("gyroZ:");
-    // Serial.println(gyroZ);
-    M5.setCursor(45, 45);
-    M5.Lcd.print("Gyro: %7.2f, %7.2f, %7.2f", gyroX, gyroY, gyroZ);
+  M5.IMU.getGyroData(&gyroX, &gyroY, &gyroZ);
+  // static long now_gyro;
+  // if (millis() - now_gyro >= delay_IMU_gyro_task)
+  // {
+  //   // Serial.print("gyroX:");
+  //   // Serial.println(gyroX);
+  //   // Serial.print("gyroY:");
+  //   // Serial.println(gyroY);
+  //   // Serial.print("gyroZ:");
+  //   // Serial.println(gyroZ);
+  //   // M5.Lcd.setCursor(45, 45);
+  //   // M5.Lcd.printf("Gyro: %7.2f, %7.2f, %7.2f", gyroX, gyroY, gyroZ);
 
-    now_gyro = millis();
-  }
+  //   now_gyro = millis();
+  // }
 }
 
 void lcd_init()
@@ -211,11 +223,28 @@ void lcd_init()
 void lcd_task()
 {
   static long now;
-  if (millis() - now >= 500)
+  if (millis() - now >= 1500)
   {
-    M5.Lcd.setCursor(10, 80);
-    M5.Lcd.setTextSize(2);
-    M5.Lcd.print(PULSE);
+    M5.Lcd.setCursor(65, 80);
+    M5.Lcd.println(percentage_0);
+
+    M5.Lcd.setCursor(40, 40);
+    M5.Lcd.print(accX);
+
+    M5.Lcd.setCursor(90, 40);
+    M5.Lcd.print(accY);
+
+    M5.Lcd.setCursor(140, 40);
+    M5.Lcd.print(accZ);
+
+    M5.Lcd.setCursor(40, 65);
+    M5.Lcd.print(gyroX);
+
+    M5.Lcd.setCursor(90, 65);
+    M5.Lcd.print(gyroY);
+
+    M5.Lcd.setCursor(140, 65);
+    M5.Lcd.print(gyroZ);
 
     now = millis();
   }
@@ -254,13 +283,13 @@ void servo_motor()
 void adc_read()
 {
   static long now;
-  if (millis() - now >= delay_adc_read)
+  if (millis() - now >= 2000)
   {
 
-    int16_t pot_value_0 = ads.readADC_SingleEnded(0);
-    int16_t pot_value_1 = ads.readADC_SingleEnded(1);
-    int16_t pot_value_2 = ads.readADC_SingleEnded(2);
-    int16_t pot_value_3 = ads.readADC_SingleEnded(3);
+    int pot_value_0 = ads.readADC_SingleEnded(0);
+    int pot_value_1 = ads.readADC_SingleEnded(1);
+    int pot_value_2 = ads.readADC_SingleEnded(2);
+    int pot_value_3 = ads.readADC_SingleEnded(3);
 
     percentage_0 = map(pot_value_0, 180, 231, 0, 100);
     percentage_1 = map(pot_value_1, 0, 1200, 0, 100);
@@ -279,8 +308,8 @@ void adc_read()
     // Serial.print("Voltage_3:");
     // Serial.println(percentage_3);
 
-    M5.setCursor(45, 65);
-    M5.Lcd.print("Percentage: %d, %d, %d, %d", percentage_0, percentage_1, percentage_2, percentage_3);
+    // M5.Lcd.setCursor(45, 65);
+    // M5.Lcd.printf("Percentage: %d, %d, %d, %d", percentage_0, percentage_1, percentage_2, percentage_3);
     now = millis();
   }
 }
@@ -314,10 +343,10 @@ void servo_lock_algo()
   {
     // for (int i = 0; i < 100; i++){
     Serial.println("Failing downward");
-    myServo.setPWM(3, 0, 600);
-    myServo.setPWM(4, 0, 600);
-    myServo.setPWM(5, 0, 600);
-    myServo.setPWM(6, 0, 600);
+    pwm.setPWM(3, 0, 600);
+    pwm.setPWM(4, 0, 600);
+    pwm.setPWM(5, 0, 600);
+    pwm.setPWM(6, 0, 600);
     delay(1000);
 
     // Serial.print(i);
@@ -330,9 +359,9 @@ void setup()
 {
   lcd_init();
   mqtt_wifi_init();
-  ads_init();
+  // ads_init();
   IMU_init();
-  servo_motor_init();
+  // servo_motor_init();
 }
 
 void loop()
@@ -343,21 +372,22 @@ void loop()
   {
   case 0:
   {
-    IMU_acc_task();
+    mqtt_reconnect();
     break;
   }
   case 1:
   {
-    IMU_gyro_task();
+    IMU_acc_task();
     break;
   }
   case 2:
   {
-    adc_read();
+    IMU_gyro_task();
     break;
   }
   case 3:
   {
+    adc_read();
     // servo_lock_algo();
     break;
   }
@@ -383,5 +413,5 @@ void loop()
   }
   }
   state++;
-  reset_button();
+  // reset_button();
 }
