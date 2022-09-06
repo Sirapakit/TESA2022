@@ -3,9 +3,10 @@ function connect_mqtt()
 
     % connect to mqtt %
     Address = "tcp://broker.hivemq.com";  % tcp://10.13.8.163
-    Topic = "TEST/TESA";
-    mqClient = mqttclient(Address);
-    subscribe(mqClient,Topic);
+    Topic1 = "TGR/Pp/data";
+    port = 1883;
+    mqClient = mqttclient(Address, Port = port);
+    sub_ch1 = subscribe(mqClient,Topic1,Callback = @showMessage);
     disp("MQTT connected");
     data = read(mqClient)
 

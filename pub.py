@@ -22,5 +22,5 @@ while True:
     client = mqtt.Client()
     client.connect(host)
     client.publish(topic, msg)
-    time.sleep(1)
+    time.sleep(1)  #Send json every 1 second
     
