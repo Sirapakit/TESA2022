@@ -4,12 +4,13 @@
 #include <PubSubClient.h>
 #include <analogWrite.h>
 #include <Adafruit_PWMServoDriver.h>
+#include <ArduinoJson.h>
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
-//mqtt_pub variables
+// mqtt_pub variables
 const char *outtopic_voltage = "Voltage";
 const char *outtopic_accX = "acc/X";
 const char *outtopic_accY = "acc/Y";
@@ -38,6 +39,8 @@ bool sub_status = false;
 char array_from_payload[50];
 int sub_angle_servo_1, sub_angle_servo_2;
 
+char buffer[256];
+
 int PWM_FREQ = 60;
 int SERVO_1, SERVO_2;
 
@@ -55,8 +58,8 @@ void reConnect();
 
 void mqtt_wifi_init()
 {
-    // const char *mqtt_server = "10.13.8.163";
-    const char *mqtt_server = "10.13.8.180";
+    const char *mqtt_server = "10.13.8.163";
+    // const char *mqtt_server = "10.13.8.180";
     // const char *mqtt_server = "broker.hivemq.com";
     // const char *mqtt_server = "tcp://0.tcp.ap.ngrok.io:17656";
     setupWifi();
@@ -71,12 +74,11 @@ void setupWifi()
     // const char *ssid = "BCILAB 2.4";
     // const char *password = "bcimemberonly";
 
-   
-    delay(10);
+    delay(50);
     M5.Lcd.setCursor(95, 95);
     M5.Lcd.print(ssid);
     WiFi.mode(WIFI_STA); // Set the mode to WiFi station mode.
-   
+
     WiFi.begin(ssid, password); // Start Wifi connection.
 
     while (WiFi.status() != WL_CONNECTED)
@@ -159,12 +161,16 @@ void lcd_task()
 
         M5.Lcd.setCursor(140, 65);
         M5.Lcd.print(gyroZ);
+
         now = millis();
     }
 }
 
 void mqtt_reconnect()
 {
+
+    const char *mqttUser = "tesa";
+    const char *mqttPassword = "1234";
     while (!client.connected())
     {
         M5.Lcd.setCursor(95, 110);
@@ -173,7 +179,7 @@ void mqtt_reconnect()
         String clientId = "MM5St-";
         clientId += String(random(0xffff), HEX);
 
-        if (client.connect(clientId.c_str()))
+        if (client.connect("BMErangerClient", mqttUser, mqttPassword))
         {
             M5.Lcd.setCursor(95, 110);
             client.subscribe(intopic);
@@ -187,12 +193,13 @@ void mqtt_reconnect()
         else
         {
             static long now;
-            if (millis() - now >= delay_mqtt_reconnect)
-            {
-                M5.Lcd.setCursor(95, 110);
-                M5.Lcd.print("Failed");
-                now = millis();
-            }
+            // if (millis() - now >= delay_mqtt_reconnect)
+            // {
+            M5.Lcd.setCursor(95, 110);
+            M5.Lcd.print("Failed");
+            delay(5000);
+            // now = millis();
+            // }
         }
     }
 }
@@ -216,9 +223,25 @@ void mqtt_pub()
         client.publish(outtopic_gyroX, msg_gyroX);
         client.publish(outtopic_gyroY, msg_gyroY);
         client.publish(outtopic_gyroZ, msg_gyroZ);
+
+        client.publish(outtopic_gyroZ, JSONencoder{"accX" : accX});
+
         client.loop();
         now = millis();
     }
+}
+
+void json_task()
+{
+    // char buffer[256];
+    size_t n = serializeJson(doc, buffer);
+    client.publish("outTopic", buffer, n);
+
+    client.beginPublish(topic, measureJson(doc), retained);
+    WriteBufferingPrint bufferedClient(client, 32);
+    serializeJson(doc, bufferedClient);
+    bufferedClient.flush();
+    client.endPublish();
 }
 
 void callback(char *intopic, byte *payload, unsigned int length)
@@ -249,14 +272,24 @@ void servo_motor_init()
     Wire.begin(32, 33);
     pwm.begin();
     pwm.setPWMFreq(PWM_FREQ);
+    // servo should rotate first to clarify that the servo is usable
 }
 
 void servo_motor()
 {
     SERVO_1 = sub_angle_servo_1;
     SERVO_2 = sub_angle_servo_2;
-    pwm.setPWM(0, 0, SERVO_1);
-    pwm.setPWM(1, 0, SERVO_2);
+    for (int i = 0; i <= SERVO_1; i++)
+        for (int i = 0; i <= SERVO_2; i++)
+        {
+            {
+                pwm.setPWM(0, 0, SERVO_1);
+                pwm.setPWM(1, 0, SERVO_2);
+            }
+        }
+    // delay(5000);
+    // then reset to the initial position
+    // or use the for loop to gradually get to the final and initial
 }
 
 void adc_read_task()
@@ -273,15 +306,16 @@ void adc_read_task()
 void reset_button_task()
 {
     if (M5.BtnB.pressedFor(1000))
-    {   
+    {
         static long now;
-        if (millis() - now >= delay_reset_buttoon_task)
-        {
-            Serial.println("Restart in 3 seconds...");
-            M5.Lcd.fillScreen(PINK);
-            esp_restart();
-            now = millis();
-        }
+        // if (millis() - now >= delay_reset_buttoon_task)
+        // {
+        Serial.println("Restart in 3 seconds...");
+        M5.Lcd.fillScreen(PINK);
+        delay(3000);
+        esp_restart();
+        // now = millis();
+        // }
     }
     M5.update();
 }
