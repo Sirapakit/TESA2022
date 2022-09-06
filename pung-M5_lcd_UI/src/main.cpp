@@ -10,6 +10,9 @@ WiFiClient espClient;
 PubSubClient client(espClient);
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 
+// StaticJsonDocument<256> doc;
+// DynamicJsonDocument doc(2048);
+
 // mqtt_pub variables
 const char *outtopic_voltage = "Voltage";
 const char *outtopic_accX = "acc/X";
@@ -18,7 +21,10 @@ const char *outtopic_accZ = "acc/Z";
 const char *outtopic_gyroX = "gyro/X";
 const char *outtopic_gyroY = "gyro/Y";
 const char *outtopic_gyroZ = "gyro/Z";
-const char *intopic = "TEST/TESA";
+const char *intopic = "robot/pwm";
+
+char topic_json[10] = "TonyA";
+char payload[100];
 
 #define MSG_BUFFER_SIZE (50)
 char msg_voltage[MSG_BUFFER_SIZE];
@@ -193,59 +199,60 @@ void mqtt_reconnect()
         else
         {
             static long now;
-            // if (millis() - now >= delay_mqtt_reconnect)
-            // {
+
             M5.Lcd.setCursor(95, 110);
             M5.Lcd.print("Failed");
             delay(5000);
-            // now = millis();
-            // }
         }
     }
 }
 
-void mqtt_pub()
+// void mqtt_pub()
+// {
+//     static long now;
+//     if (millis() - now >= delay_mqtt_pub)
+//     {
+//         snprintf(msg_voltage, MSG_BUFFER_SIZE, " %d", Voltage);
+//         snprintf(msg_accX, MSG_BUFFER_SIZE, " %7.2f", accX);
+//         snprintf(msg_accY, MSG_BUFFER_SIZE, " %7.2f", accY);
+//         snprintf(msg_accZ, MSG_BUFFER_SIZE, " %7.2f", accZ);
+//         snprintf(msg_gyroX, MSG_BUFFER_SIZE, " %7.2f", gyroX);
+//         snprintf(msg_gyroY, MSG_BUFFER_SIZE, " %7.2f", gyroY);
+//         snprintf(msg_gyroZ, MSG_BUFFER_SIZE, " %7.2f", gyroZ);
+//         client.publish(outtopic_voltage, msg_voltage);
+//         client.publish(outtopic_accX, msg_accX);
+//         client.publish(outtopic_accY, msg_accY);
+//         client.publish(outtopic_accZ, msg_accZ);
+//         client.publish(outtopic_gyroX, msg_gyroX);
+//         client.publish(outtopic_gyroY, msg_gyroY);
+//         client.publish(outtopic_gyroZ, msg_gyroZ);
+
+//         client.loop();
+//         now = millis();
+//     }
+// }
+
+void json_task()
 {
     static long now;
-    if (millis() - now >= delay_mqtt_pub)
+    if (millis() - now >= 3000)
     {
-        snprintf(msg_voltage, MSG_BUFFER_SIZE, " %d", Voltage);
-        snprintf(msg_accX, MSG_BUFFER_SIZE, " %7.2f", accX);
-        snprintf(msg_accY, MSG_BUFFER_SIZE, " %7.2f", accY);
-        snprintf(msg_accZ, MSG_BUFFER_SIZE, " %7.2f", accZ);
-        snprintf(msg_gyroX, MSG_BUFFER_SIZE, " %7.2f", gyroX);
-        snprintf(msg_gyroY, MSG_BUFFER_SIZE, " %7.2f", gyroY);
-        snprintf(msg_gyroZ, MSG_BUFFER_SIZE, " %7.2f", gyroZ);
-        client.publish(outtopic_voltage, msg_voltage);
-        client.publish(outtopic_accX, msg_accX);
-        client.publish(outtopic_accY, msg_accY);
-        client.publish(outtopic_accZ, msg_accZ);
-        client.publish(outtopic_gyroX, msg_gyroX);
-        client.publish(outtopic_gyroY, msg_gyroY);
-        client.publish(outtopic_gyroZ, msg_gyroZ);
 
-        client.publish(outtopic_gyroZ, JSONencoder{"accX" : accX});
+        float coordX = accX + 100.0;
+        float coordY = accY + 100.0;
+        float coordZ = accZ + 100.0;
 
-        client.loop();
+        sprintf(payload, "{\"COORD_X\":%7.2f,\"COORD_Y\":%7.2f,\"COORD_Z\":%7.2f,\"TIME_STAMP\":4}", coordX, coordY, coordZ);
+        client.publish(topic_json, payload);
+
+        \ client.loop();
         now = millis();
     }
 }
 
-void json_task()
-{
-    // char buffer[256];
-    size_t n = serializeJson(doc, buffer);
-    client.publish("outTopic", buffer, n);
-
-    client.beginPublish(topic, measureJson(doc), retained);
-    WriteBufferingPrint bufferedClient(client, 32);
-    serializeJson(doc, bufferedClient);
-    bufferedClient.flush();
-    client.endPublish();
-}
-
 void callback(char *intopic, byte *payload, unsigned int length)
 {
+    // deserializeJson(doc, (const byte*)payload, length);
     for (int i = 0; i < length; i++)
     {
         array_from_payload[i] = ((char)payload[i]);
@@ -325,7 +332,7 @@ void setup()
     lcd_init();
     mqtt_wifi_init();
     imu_init();
-    servo_motor_init();
+    // servo_motor_init();
 }
 
 void loop()
@@ -346,7 +353,7 @@ void loop()
     }
     case 2:
     {
-        servo_motor();
+        // servo_motor();
         break;
     }
     case 3:
@@ -361,7 +368,8 @@ void loop()
     }
     case 5:
     {
-        mqtt_pub();
+        json_task();
+        // mqtt_pub();
         break;
     }
     case 6:
