@@ -39,6 +39,8 @@ bool sub_status = false;
 char array_from_payload[50];
 int sub_angle_servo_1, sub_angle_servo_2;
 
+char buffer[256];
+
 int PWM_FREQ = 60;
 int SERVO_1, SERVO_2;
 
@@ -221,6 +223,9 @@ void mqtt_pub()
         client.publish(outtopic_gyroX, msg_gyroX);
         client.publish(outtopic_gyroY, msg_gyroY);
         client.publish(outtopic_gyroZ, msg_gyroZ);
+
+        client.publish(outtopic_gyroZ, JSONencoder{"accX" : accX});
+
         client.loop();
         now = millis();
     }
@@ -228,21 +233,15 @@ void mqtt_pub()
 
 void json_task()
 {
-    StaticJsonBuffer<300> JSONbuffer;
-    JsonObject &JSONencoder = JSONbuffer.createObject();
+    // char buffer[256];
+    size_t n = serializeJson(doc, buffer);
+    client.publish("outTopic", buffer, n);
 
-    JSONencoder["device"] = "ESP32";
-    JSONencoder["sensorType"] = "Temperature";
-    JsonArray &values = JSONencoder.createNestedArray("values");
-
-    values.add(20);
-    values.add(21);
-    values.add(23);
-
-    char JSONmessageBuffer[100];
-    JSONencoder.printTo(JSONmessageBuffer, sizeof(JSONmessageBuffer));
-    Serial.println("Sending message to MQTT topic..");
-    Serial.println(JSONmessageBuffer);
+    client.beginPublish(topic, measureJson(doc), retained);
+    WriteBufferingPrint bufferedClient(client, 32);
+    serializeJson(doc, bufferedClient);
+    bufferedClient.flush();
+    client.endPublish();
 }
 
 void callback(char *intopic, byte *payload, unsigned int length)
