@@ -1,11 +1,12 @@
 
 % connect to mqtt %
-Address = "tcp://broker.hivemq.com";
-Topic = "TGR/data";
+%%Address = "tcp://broker.hivemq.com";
+Address = "tcp://10.13.8.163";
+Topic = "TEST/TESA";
 mqClient = mqttclient(Address, Port=1883);
 subscribe(mqClient,Topic);
 % end %
-
+%%
 %initiation
 rx = 0;
 ry = 0;
@@ -20,7 +21,7 @@ Rz = [0 0 1 0];
 P = [0 0 1];
 
 vector = [0 0 0];
-
+%%
 while(1)
 
     data = read(mqClient);
@@ -35,8 +36,9 @@ while(1)
     else
         disp("data received");
         r = jsondecode (data.Data) ;
+        class(r.px)
     end
-
+%%
      % extract data from struct
         rx = double(r.rx);
         ry = double(r.ry);

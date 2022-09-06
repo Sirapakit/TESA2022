@@ -31,7 +31,7 @@ while(1)
     xi2=x+(L*cosd(ang1));
     yi2=y+(L*sind(ang1));
 
-    xt2=x+(L*sind(ang));
+    xt2=x+(L*sind(ang2));
     yt2=y+(L*cosd(ang2));
     line([x, xi2], [y,yi2], 'Color', 'r', 'LineWidth', 2);
     hold on
