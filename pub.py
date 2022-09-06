@@ -1,12 +1,26 @@
+from random import randrange
 import paho.mqtt.client as mqtt
+import random
+import json
+import time
+
 host = "broker.hivemq.com"
+topic = "tgr2022/bmeranger12/testing"
 port = 1883
-a = 0
-b = 0.5
-c = 0
-d = 0.5
+
 while True:
-    a += 0.1
+    x = random.uniform(0, 0.05)
+    y = random.uniform(0, 0.05)
+    z = random.uniform(0, 0.05)
+
+    msg = json.dumps({
+        "x": round(x,3),
+        "y": round(y,3),
+        "z": round(z,3)
+        })
+
     client = mqtt.Client()
     client.connect(host)
-    client.publish("TGR/data", str({"rx":a, "ry":b, "rz":c, "p":d}))
+    client.publish(topic, msg)
+    time.sleep(1)
+    
