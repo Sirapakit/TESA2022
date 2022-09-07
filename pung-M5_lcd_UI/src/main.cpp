@@ -21,7 +21,7 @@ const char *outtopic_accZ = "acc/Z";
 const char *outtopic_gyroX = "gyro/X";
 const char *outtopic_gyroY = "gyro/Y";
 const char *outtopic_gyroZ = "gyro/Z";
-const char *intopic = "robot/pwm";
+const char *intopic = "PWM";
 
 char topic_json[10] = "TonyA";
 char payload[100];
@@ -57,6 +57,7 @@ int delay_mqtt_reconnect = 5000;
 int delay_mqtt_pub = 1000;
 int delay_adc_read_task = 100;
 int delay_reset_buttoon_task = 3000;
+int delay_mqtt_json_pub = 3000;
 
 void setupWifi();
 void callback(char *intopic, byte *payload, unsigned int length);
@@ -69,7 +70,7 @@ void mqtt_wifi_init()
     // const char *mqtt_server = "broker.hivemq.com";
     // const char *mqtt_server = "tcp://0.tcp.ap.ngrok.io:17656";
     setupWifi();
-    client.setServer(mqtt_server, 1883);
+    client.setServer(mqtt_server, 9883);
     client.setCallback(callback);
 }
 
@@ -250,7 +251,7 @@ void json_task()
     // client.endPublish();
 
     static long now;
-    if (millis() - now >= 3000)
+    if (millis() - now >= delay_mqtt_json_pub)
     {
         // char topic[10];
         // char payload[100];
@@ -259,7 +260,7 @@ void json_task()
         float coordY = accY + 100.0;
         float coordZ = accZ + 100.0;
 
-        sprintf(payload, "{\"COORD_X\":%7.2f,\"COORD_Y\":%7.2f,\"COORD_Z\":%7.2f,\"TIME_STAMP\":4}", coordX, coordY, coordZ);
+        sprintf(payload, "{\"px\":%7.2f,\"py\":%7.2f,\"pz\":%7.2f,\"TIME_STAMP\":%d}", accX, accY, accZ, millis());
         client.publish(topic_json, payload);
 
         // Serial.println("######################");
@@ -304,14 +305,16 @@ void servo_motor()
 {
     SERVO_1 = sub_angle_servo_1;
     SERVO_2 = sub_angle_servo_2;
-    for (int i = 0; i <= SERVO_1; i++)
-        for (int i = 0; i <= SERVO_2; i++)
-        {
-            {
-                pwm.setPWM(0, 0, SERVO_1);
-                pwm.setPWM(1, 0, SERVO_2);
-            }
-        }
+    // for (int i = 0; i <= SERVO_1; i++)
+    //     for (int j = 0; j <= SERVO_2; j++)
+    //     {
+    //         {
+    // pwm.setPWM(0, 0, SERVO_1);
+    // pwm.setPWM(1, 0, SERVO_2);
+    pwm.setPWM(6, 0, SERVO_1);
+    pwm.setPWM(7, 0, SERVO_2);
+    //     }
+    // }
     // delay(5000);
     // then reset to the initial position
     // or use the for loop to gradually get to the final and initial
@@ -350,7 +353,7 @@ void setup()
     lcd_init();
     mqtt_wifi_init();
     imu_init();
-    // servo_motor_init();
+    servo_motor_init();
 }
 
 void loop()
@@ -371,7 +374,7 @@ void loop()
     }
     case 2:
     {
-        // servo_motor();
+        servo_motor();
         break;
     }
     case 3:
