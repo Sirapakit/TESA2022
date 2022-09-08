@@ -5,15 +5,14 @@
 #include <analogWrite.h>
 #include <Adafruit_PWMServoDriver.h>
 #include <ArduinoJson.h>
+#include <SimpleKalmanFilter.h>
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
+SimpleKalmanFilter simpleKalmanFilter(0.01, 0.03, 0.03);
 
-// StaticJsonDocument<256> doc;
-// DynamicJsonDocument doc(2048);
 
-// mqtt_pub variables
 const char *outtopic_voltage = "Voltage";
 const char *outtopic_accX = "acc/X";
 const char *outtopic_accY = "acc/Y";
@@ -21,10 +20,15 @@ const char *outtopic_accZ = "acc/Z";
 const char *outtopic_gyroX = "gyro/X";
 const char *outtopic_gyroY = "gyro/Y";
 const char *outtopic_gyroZ = "gyro/Z";
+
 const char *intopic = "PWM";
 
-char topic_json[10] = "TonyA";
-char payload[100];
+
+char topic_json_co[10] = "TonyA";
+char topic_json_gyro[10] = "TonyB";
+
+char payload_co[100];
+char payload_gyro[100];
 
 #define MSG_BUFFER_SIZE (50)
 char msg_voltage[MSG_BUFFER_SIZE];
@@ -36,7 +40,11 @@ char msg_gyroY[MSG_BUFFER_SIZE];
 char msg_gyroZ[MSG_BUFFER_SIZE];
 
 float accX, accY, accZ;
+float accZ_no_g;
 float gyroX, gyroY, gyroZ;
+static float v0X, v0Y, v0Z;
+float disX, disY, disZ;
+static float coX, coY, coZ;
 int Voltage;
 
 bool wifi_status = false;
@@ -70,13 +78,13 @@ void mqtt_wifi_init()
     // const char *mqtt_server = "broker.hivemq.com";
     // const char *mqtt_server = "tcp://0.tcp.ap.ngrok.io:17656";
     setupWifi();
-    client.setServer(mqtt_server, 9883);
+    client.setServer(mqtt_server, 1883);
     client.setCallback(callback);
 }
 
 void setupWifi()
 {
-    const char *ssid = "catsvn";
+    const char *ssid = "catsvn_5GHz";
     const char *password = "catsvn2000";
     // const char *ssid = "BCILAB 2.4";
     // const char *password = "bcimemberonly";
@@ -106,8 +114,22 @@ void imu_init()
 
 void imu_task()
 {
-    M5.IMU.getAccelData(&accX, &accY, &accZ);
+    static long now;
     M5.IMU.getGyroData(&gyroX, &gyroY, &gyroZ);
+    if (millis() - now >= 1000){
+    M5.IMU.getAccelData(&accX, &accY, &accZ);
+    float estimated_valueX = simpleKalmanFilter.updateEstimate(accX);
+    float estimated_valueY = simpleKalmanFilter.updateEstimate(accY);
+    float estimated_valueY = simpleKalmanFilter.updateEstimate(accZ_no_g);
+    disX = (v0X*((millis()-now)/1000))+((estimated_valueX/2)*(((millis()-now)/1000)*((millis()-now)/1000)));
+    disY = (v0Y*((millis()-now)/1000))+((estimated_valueY/2)*(((millis()-now)/1000)*((millis()-now)/1000)));
+    disZ = (v0Z*((millis()-now)/1000))+((estimated_valueY/2)*(((millis()-now)/1000)*((millis()-now)/1000)));
+     
+    coX = coX + disX; 
+    coY = coY + disY;
+    coZ = coZ + disZ;
+    now = millis();
+    }
 }
 
 void lcd_init()
@@ -251,17 +273,17 @@ void json_task()
     // client.endPublish();
 
     static long now;
+
     if (millis() - now >= delay_mqtt_json_pub)
     {
+
         // char topic[10];
         // char payload[100];
 
-        float coordX = accX + 100.0;
-        float coordY = accY + 100.0;
-        float coordZ = accZ + 100.0;
-
-        sprintf(payload, "{\"px\":%7.2f,\"py\":%7.2f,\"pz\":%7.2f,\"TIME_STAMP\":%d}", accX, accY, accZ, millis());
-        client.publish(topic_json, payload);
+        sprintf(payload_co, "{\"px\":%7.2f,\"py\":%7.2f,\"pz\":%7.2f,\"TIME_STAMP\":%d}", coX, coY, coZ, millis());
+        sprintf(payload_gyro, "{\"gyrox\":%7.2f,\"gyroy\":%7.2f,\"gyroz\":%7.2f,\"TIME_STAMP\":%d}", gyroX, gyroY, gyroZ, millis());
+        client.publish(topic_json_co, payload_co);
+        client.publish(topic_json_gyro, payload_gyro);
 
         // Serial.println("######################");
         client.loop();
@@ -353,7 +375,7 @@ void setup()
     lcd_init();
     mqtt_wifi_init();
     imu_init();
-    servo_motor_init();
+    // servo_motor_init();
 }
 
 void loop()
@@ -374,7 +396,7 @@ void loop()
     }
     case 2:
     {
-        servo_motor();
+        // servo_motor();
         break;
     }
     case 3:
@@ -391,6 +413,7 @@ void loop()
     {
         json_task();
         // mqtt_pub();
+
         break;
     }
     case 6:
