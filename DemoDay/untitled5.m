@@ -6,8 +6,8 @@ cliNode = ros2node("Clinode"); %create node
 ros2 node list %check node
 rosSub = ros2subscriber(cliNode,"tgr2022/bmeranger12/in"); %ros subscribe mqtt,"geometry_msgs/Twist"
 
-    receivevalue= receive(rosSub);% receive data
-    disp ("ros data received");
+receivevalue= receive(rosSub);% receive data
+disp ("ros data received");
    
 
 
