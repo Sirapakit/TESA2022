@@ -1,5 +1,7 @@
+#include <M5StickCPlus.h>
 #include <Adafruit_ADS1X15.h>
 #include <Wire.h>
+
 #define I2C_SDA_0 33
 #define I2C_SCL_0 36
 

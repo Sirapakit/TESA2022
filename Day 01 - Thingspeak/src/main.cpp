@@ -299,11 +299,11 @@ void adc_read()
     // Serial.print("Voltage_0:");
     // Serial.println(percentage_0);
 
-    // Serial.print("Voltage_1:");
-    // Serial.println(percentage_1);
+    Serial.print("Voltage_1:");
+    Serial.println(pot_value_1);
 
-    // Serial.print("Voltage_2:");
-    // Serial.println(percentage_2);
+    Serial.print("Voltage_2:");
+    Serial.println(pot_value_2);
 
     // Serial.print("Voltage_3:");
     // Serial.println(percentage_3);

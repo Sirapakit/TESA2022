@@ -1,59 +1,35 @@
+#include <PubSubClient.h>
 #include <Arduino.h>
 #include <M5StickCPlus.h>
 #include <WiFi.h>
-#include <PubSubClient.h>
 #include <analogWrite.h>
 #include <Adafruit_PWMServoDriver.h>
-#include <ArduinoJson.h>
 #include <SimpleKalmanFilter.h>
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
-SimpleKalmanFilter simpleKalmanFilter(0.01, 0.03, 0.03);
-
-
-const char *outtopic_voltage = "Voltage";
-const char *outtopic_accX = "acc/X";
-const char *outtopic_accY = "acc/Y";
-const char *outtopic_accZ = "acc/Z";
-const char *outtopic_gyroX = "gyro/X";
-const char *outtopic_gyroY = "gyro/Y";
-const char *outtopic_gyroZ = "gyro/Z";
+SimpleKalmanFilter simpleKalmanFilter(0.001, 0.03, 0.03);
 
 const char *intopic = "PWM";
 
+const char *topic_json_co = "TonyA";
+const char *topic_json_gyro = "TonyB";
 
-char topic_json_co[10] = "TonyA";
-char topic_json_gyro[10] = "TonyB";
-
-char payload_co[100];
-char payload_gyro[100];
-
-#define MSG_BUFFER_SIZE (50)
-char msg_voltage[MSG_BUFFER_SIZE];
-char msg_accX[MSG_BUFFER_SIZE];
-char msg_accY[MSG_BUFFER_SIZE];
-char msg_accZ[MSG_BUFFER_SIZE];
-char msg_gyroX[MSG_BUFFER_SIZE];
-char msg_gyroY[MSG_BUFFER_SIZE];
-char msg_gyroZ[MSG_BUFFER_SIZE];
+char payload_co[200];
+char payload_gyro[200];
 
 float accX, accY, accZ;
-float accZ_no_g;
 float gyroX, gyroY, gyroZ;
-static float v0X, v0Y, v0Z;
 float disX, disY, disZ;
-static float coX, coY, coZ;
 int Voltage;
 
 bool wifi_status = false;
 bool sub_status = false;
+int gripper_state = 0;
 
 char array_from_payload[50];
 int sub_angle_servo_1, sub_angle_servo_2;
-
-char buffer[256];
 
 int PWM_FREQ = 60;
 int SERVO_1, SERVO_2;
@@ -67,6 +43,9 @@ int delay_adc_read_task = 100;
 int delay_reset_buttoon_task = 3000;
 int delay_mqtt_json_pub = 3000;
 
+static float coX = 0;
+static float coY = 0;
+
 void setupWifi();
 void callback(char *intopic, byte *payload, unsigned int length);
 void reConnect();
@@ -74,6 +53,7 @@ void reConnect();
 void mqtt_wifi_init()
 {
     const char *mqtt_server = "10.13.8.163";
+    // const char *mqtt_server = "169.254.132.183";
     // const char *mqtt_server = "10.13.8.180";
     // const char *mqtt_server = "broker.hivemq.com";
     // const char *mqtt_server = "tcp://0.tcp.ap.ngrok.io:17656";
@@ -84,8 +64,16 @@ void mqtt_wifi_init()
 
 void setupWifi()
 {
-    const char *ssid = "catsvn_5GHz";
+    const char *ssid = "catsvn";
     const char *password = "catsvn2000";
+
+    // IPAddress staticIP(192, 168, 1, 150);
+    // IPAddress gateway(10, 13, 8, 69);
+    // IPAddress subnet(255, 255, 255, 0);
+    // IPAddress dns(192, 168, 1, 254);
+
+    // const char *ssid = "TESA_TOP_GUN";
+
     // const char *ssid = "Wifi ของ korrawiz";
     // const char *password = "korrawiz";
 
@@ -98,6 +86,7 @@ void setupWifi()
     WiFi.mode(WIFI_STA); // Set the mode to WiFi station mode.
 
     WiFi.begin(ssid, password); // Start Wifi connection.
+    // WiFi.begin(ssid); // Start Wifi connection.
 
     while (WiFi.status() != WL_CONNECTED)
     {
@@ -117,21 +106,22 @@ void imu_init()
 
 void imu_task()
 {
+    coX = 0;
+    coY = 0;
     static long now;
     M5.IMU.getGyroData(&gyroX, &gyroY, &gyroZ);
-    if (millis() - now >= 1000){
-    M5.IMU.getAccelData(&accX, &accY, &accZ);
-    float estimated_valueX = simpleKalmanFilter.updateEstimate(accX);
-    float estimated_valueY = simpleKalmanFilter.updateEstimate(accY);
-    float estimated_valueY = simpleKalmanFilter.updateEstimate(accZ_no_g);
-    disX = (v0X*((millis()-now)/1000))+((estimated_valueX/2)*(((millis()-now)/1000)*((millis()-now)/1000)));
-    disY = (v0Y*((millis()-now)/1000))+((estimated_valueY/2)*(((millis()-now)/1000)*((millis()-now)/1000)));
-    disZ = (v0Z*((millis()-now)/1000))+((estimated_valueY/2)*(((millis()-now)/1000)*((millis()-now)/1000)));
-     
-    coX = coX + disX; 
-    coY = coY + disY;
-    coZ = coZ + disZ;
-    now = millis();
+    if (millis() - now >= 100)
+    {
+        M5.IMU.getAccelData(&accX, &accY, &accZ);
+        float estimated_valueX = simpleKalmanFilter.updateEstimate(accX);
+        float estimated_valueY = simpleKalmanFilter.updateEstimate(accY);
+
+        disX = ((estimated_valueX / 2) * (((millis() - now) / 1000.0) * ((millis() - now) / 1000.0)));
+        disY = ((estimated_valueY / 2) * (((millis() - now) / 1000.0) * ((millis() - now) / 1000.0)));
+
+        now = millis();
+        coX = coX + disX;
+        coY = coY + disY;
     }
 }
 
@@ -208,8 +198,8 @@ void mqtt_reconnect()
         M5.Lcd.setCursor(95, 110);
         M5.Lcd.println("Attempting");
 
-        String clientId = "MM5St-";
-        clientId += String(random(0xffff), HEX);
+        // String clientId = "MM5St-";
+        // clientId += String(random(0xffff), HEX);
 
         if (client.connect("BMErangerClient", mqttUser, mqttPassword))
         {
@@ -236,40 +226,33 @@ void mqtt_reconnect()
     }
 }
 
-// void mqtt_pub()
+// void pz_logic()
 // {
 //     static long now;
-//     if (millis() - now >= delay_mqtt_pub)
+//     if (M5.BtnA.pressedFor(1000))
 //     {
-//         snprintf(msg_voltage, MSG_BUFFER_SIZE, " %d", Voltage);
-//         snprintf(msg_accX, MSG_BUFFER_SIZE, " %7.2f", accX);
-//         snprintf(msg_accY, MSG_BUFFER_SIZE, " %7.2f", accY);
-//         snprintf(msg_accZ, MSG_BUFFER_SIZE, " %7.2f", accZ);
-//         snprintf(msg_gyroX, MSG_BUFFER_SIZE, " %7.2f", gyroX);
-//         snprintf(msg_gyroY, MSG_BUFFER_SIZE, " %7.2f", gyroY);
-//         snprintf(msg_gyroZ, MSG_BUFFER_SIZE, " %7.2f", gyroZ);
-//         client.publish(outtopic_voltage, msg_voltage);
-//         client.publish(outtopic_accX, msg_accX);
-//         client.publish(outtopic_accY, msg_accY);
-//         client.publish(outtopic_accZ, msg_accZ);
-//         client.publish(outtopic_gyroX, msg_gyroX);
-//         client.publish(outtopic_gyroY, msg_gyroY);
-//         client.publish(outtopic_gyroZ, msg_gyroZ);
-
-//         client.loop();
-//         now = millis();
+//         coZ = coZ + ONE_STEP_Z_AXIS;
+//         analogWrite(GPIO_NUM_2); // NUM2 IS BUZZER
+//         delay(1000);
 //     }
 // }
 
 void json_task_send_coord()
 {
+
     static long now;
 
     if (millis() - now >= delay_mqtt_json_pub)
     {
+        // TonyA
+        // sprintf(payload_co, "{\"px\":%7.2f,\"py\":%7.2f,\"pz\":%7.2f,\"gp\":%s,\"TIME_STAMP\":%d}", 4, 4, 4, gripper_logic, millis());
+        sprintf(payload_co, "{\"px\":%7.2f,\"py\":%7.2f,\"pz\":0,\"gp\":%d,\"TIME_STAMP\":%d}", coX, coY, gripper_state, millis());
+        // need pz logic and gp logic
 
-        sprintf(payload_co, "{\"px\":%7.2f,\"py\":%7.2f,\"pz\":%7.2f,\"TIME_STAMP\":%d}", coX, coY, coZ, millis());
-        sprintf(payload_gyro, "{\"gyrox\":%7.2f,\"gyroy\":%7.2f,\"gyroz\":%7.2f,\"TIME_STAMP\":%d}", gyroX, gyroY, gyroZ, millis());
+        // TonyB
+        // sprintf(payload_gyro, "{\"gyroX\":%7.2f,\"gyroY\":%7.2f,\"gyroZ\":%7.2f,\"accX\":%7.2f,\"accY\":%7.2f,\"accZ\":%7.2f,\"TIME_STAMP\":%d}", gyroX, gyroY, gyroZ, accX, accY, accZ, millis());
+        sprintf(payload_gyro, "{\"gyroX\":%.2f,\"gyroY\":%.2f,\"gyroZ\":%.2f,\"accX\":%.2f,\"accY\":%.2f,\"accZ\":%.2f,\"TIME_STAMP\":%d}", gyroX, gyroY, gyroZ, accX, accY, accZ, millis());
+
         client.publish(topic_json_co, payload_co);
         client.publish(topic_json_gyro, payload_gyro);
 
@@ -278,9 +261,21 @@ void json_task_send_coord()
     }
 }
 
+// void gripper_logic()
+// {
+//     static long now;
+//     if (analogRead(MIDDLE_FINGER_POTEN) >= THRES)
+//     {
+//         gripper_state = 1;
+//     }
+//     else
+//     {
+//         gripper_state = 0;
+//     }
+// }
+
 void callback(char *intopic, byte *payload, unsigned int length)
 {
-    // deserializeJson(doc, (const byte*)payload, length);
     for (int i = 0; i < length; i++)
     {
         array_from_payload[i] = ((char)payload[i]);
@@ -296,6 +291,7 @@ void mqtt_sub()
     }
     else
     {
+        // Serial.println("Hello World Debuggin");
         Serial.print(array_from_payload);
         sscanf(array_from_payload, "%d%d", &sub_angle_servo_1, &sub_angle_servo_2);
         sub_status = false;
@@ -314,16 +310,16 @@ void servo_motor()
 {
     SERVO_1 = sub_angle_servo_1;
     SERVO_2 = sub_angle_servo_2;
-    // for (int i = 0; i <= SERVO_1; i++)
-    //     for (int j = 0; j <= SERVO_2; j++)
-    //     {
-    //         {
-    // pwm.setPWM(0, 0, SERVO_1);
-    // pwm.setPWM(1, 0, SERVO_2);
-    pwm.setPWM(6, 0, SERVO_1);
-    pwm.setPWM(7, 0, SERVO_2);
-    //     }
-    // }
+    for (int i = 0; i <= SERVO_1; i = i + 20)
+    {
+        for (int j = 0; j <= SERVO_2; j = j + 20)
+        {
+            pwm.setPWM(0, 0, i);
+            pwm.setPWM(1, 0, j);
+            // pwm.setPWM(6, 0, SERVO_1);
+            // pwm.setPWM(7, 0, SERVO_2);
+        }
+    }
     // delay(5000);
     // then reset to the initial position
     // or use the for loop to gradually get to the final and initial
@@ -344,15 +340,10 @@ void reset_button_task()
 {
     if (M5.BtnB.pressedFor(1000))
     {
-        static long now;
-        // if (millis() - now >= delay_reset_buttoon_task)
-        // {
         Serial.println("Restart in 3 seconds...");
         M5.Lcd.fillScreen(PINK);
         delay(3000);
         esp_restart();
-        // now = millis();
-        // }
     }
     M5.update();
 }
@@ -362,7 +353,7 @@ void setup()
     lcd_init();
     mqtt_wifi_init();
     imu_init();
-    // servo_motor_init();
+    servo_motor_init();
 }
 
 void loop()
@@ -383,12 +374,12 @@ void loop()
     }
     case 2:
     {
-        // servo_motor();
+        imu_task();
         break;
     }
     case 3:
     {
-        imu_task();
+        servo_motor();
         break;
     }
     case 4:
@@ -399,8 +390,6 @@ void loop()
     case 5:
     {
         json_task_send_coord();
-        // mqtt_pub();
-
         break;
     }
     case 6:
@@ -415,5 +404,6 @@ void loop()
     }
     }
     state++;
+    // Serial.println("HelloWorld Debugging");
     reset_button_task();
 }
