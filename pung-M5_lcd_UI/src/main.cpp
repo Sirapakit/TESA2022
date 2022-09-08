@@ -47,6 +47,13 @@ float disX, disY, disZ;
 static float coX, coY, coZ;
 int Voltage;
 
+static int pot_value_middle_finger;
+static int pot_value_ring_finger;
+int threshold_middle_finger;
+int threshold_ring_finger;
+
+bool gripper_logic = false;
+
 bool wifi_status = false;
 bool sub_status = false;
 
@@ -58,7 +65,8 @@ char buffer[256];
 int PWM_FREQ = 60;
 int SERVO_1, SERVO_2;
 
-int GPIO_ANALOG_READ = 36;
+#define GPIO_ANALOG_READ_MIDDLE_FINGER  2
+#define GPIO_ANALOG_READ_RING_FINGER  3
 
 int delay_lcd_task = 1000;
 int delay_mqtt_reconnect = 5000;
@@ -84,7 +92,7 @@ void mqtt_wifi_init()
 
 void setupWifi()
 {
-    const char *ssid = "catsvn_5GHz";
+    const char *ssid = "catsvn";
     const char *password = "catsvn2000";
     // const char *ssid = "BCILAB 2.4";
     // const char *password = "bcimemberonly";
@@ -118,12 +126,13 @@ void imu_task()
     M5.IMU.getGyroData(&gyroX, &gyroY, &gyroZ);
     if (millis() - now >= 1000){
     M5.IMU.getAccelData(&accX, &accY, &accZ);
+    accZ_no_g = accZ - 1;
     float estimated_valueX = simpleKalmanFilter.updateEstimate(accX);
     float estimated_valueY = simpleKalmanFilter.updateEstimate(accY);
-    float estimated_valueY = simpleKalmanFilter.updateEstimate(accZ_no_g);
+    float estimated_valueZ = simpleKalmanFilter.updateEstimate(accZ_no_g);
     disX = (v0X*((millis()-now)/1000))+((estimated_valueX/2)*(((millis()-now)/1000)*((millis()-now)/1000)));
     disY = (v0Y*((millis()-now)/1000))+((estimated_valueY/2)*(((millis()-now)/1000)*((millis()-now)/1000)));
-    disZ = (v0Z*((millis()-now)/1000))+((estimated_valueY/2)*(((millis()-now)/1000)*((millis()-now)/1000)));
+    disZ = (v0Z*((millis()-now)/1000))+((estimated_valueZ/2)*(((millis()-now)/1000)*((millis()-now)/1000)));
      
     coX = coX + disX; 
     coY = coY + disY;
@@ -344,11 +353,17 @@ void servo_motor()
 
 void adc_read_task()
 {
-    static int pot_value = analogRead(GPIO_ANALOG_READ);
+    pot_value_middle_finger = analogRead(GPIO_ANALOG_READ_MIDDLE_FINGER);
+    pot_value_ring_finger = analogRead(GPIO_ANALOG_READ_RING_FINGER);
     static long now;
     if (millis() - now >= delay_adc_read_task)
     {
-        pot_value = Voltage;
+        if (pot_value_middle_finger > threshold_middle_finger && pot_value_ring_finger > threshold_ring_finger){
+            gripper_logic = true;
+        }
+        else{
+            gripper_logic = false;
+        }
         now = millis();
     }
 }
