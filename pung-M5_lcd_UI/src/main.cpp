@@ -77,6 +77,9 @@ void setupWifi()
 {
     const char *ssid = "catsvn";
     const char *password = "catsvn2000";
+    // const char *ssid = "Wifi ของ korrawiz";
+    // const char *password = "korrawiz";
+
     // const char *ssid = "BCILAB 2.4";
     // const char *password = "bcimemberonly";
 
@@ -235,26 +238,11 @@ void mqtt_reconnect()
 //     }
 // }
 
-void json_task()
+void json_task_send_coord()
 {
-    // char buffer[256];
-    // size_t n = serializeJson(doc, buffer);
-    // client.publish("TonyA", buffer, n);
-
-    // bool retained = false;
-    // client.beginPublish("TonyA", measureJson(doc), retained);
-    // // WriteBufferingPrint bufferedClient(client, 32);
-    // write(client, 32);
-    // serializeJson(doc, bufferedClient);
-    // bufferedClient.flush();
-    // client.endPublish();
-
     static long now;
     if (millis() - now >= 3000)
     {
-        // char topic[10];
-        // char payload[100];
-
         float coordX = accX + 100.0;
         float coordY = accY + 100.0;
         float coordZ = accZ + 100.0;
@@ -262,7 +250,6 @@ void json_task()
         sprintf(payload, "{\"COORD_X\":%7.2f,\"COORD_Y\":%7.2f,\"COORD_Z\":%7.2f,\"TIME_STAMP\":4}", coordX, coordY, coordZ);
         client.publish(topic_json, payload);
 
-        // Serial.println("######################");
         client.loop();
         now = millis();
     }
@@ -386,7 +373,7 @@ void loop()
     }
     case 5:
     {
-        json_task();
+        json_task_send_coord();
         // mqtt_pub();
         break;
     }
