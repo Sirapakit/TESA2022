@@ -5,15 +5,14 @@
 #include <analogWrite.h>
 #include <Adafruit_PWMServoDriver.h>
 #include <ArduinoJson.h>
+#include <SimpleKalmanFilter.h>
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
+SimpleKalmanFilter simpleKalmanFilter(0.01, 0.03, 0.03);
 
-// StaticJsonDocument<256> doc;
-// DynamicJsonDocument doc(2048);
 
-// mqtt_pub variables
 const char *outtopic_voltage = "Voltage";
 const char *outtopic_accX = "acc/X";
 const char *outtopic_accY = "acc/Y";
@@ -21,10 +20,15 @@ const char *outtopic_accZ = "acc/Z";
 const char *outtopic_gyroX = "gyro/X";
 const char *outtopic_gyroY = "gyro/Y";
 const char *outtopic_gyroZ = "gyro/Z";
-const char *intopic = "robot/pwm";
 
-char topic_json[10] = "TonyA";
-char payload[100];
+const char *intopic = "PWM";
+
+
+char topic_json_co[10] = "TonyA";
+char topic_json_gyro[10] = "TonyB";
+
+char payload_co[100];
+char payload_gyro[100];
 
 #define MSG_BUFFER_SIZE (50)
 char msg_voltage[MSG_BUFFER_SIZE];
@@ -36,7 +40,11 @@ char msg_gyroY[MSG_BUFFER_SIZE];
 char msg_gyroZ[MSG_BUFFER_SIZE];
 
 float accX, accY, accZ;
+float accZ_no_g;
 float gyroX, gyroY, gyroZ;
+static float v0X, v0Y, v0Z;
+float disX, disY, disZ;
+static float coX, coY, coZ;
 int Voltage;
 
 bool wifi_status = false;
@@ -57,6 +65,7 @@ int delay_mqtt_reconnect = 5000;
 int delay_mqtt_pub = 1000;
 int delay_adc_read_task = 100;
 int delay_reset_buttoon_task = 3000;
+int delay_mqtt_json_pub = 3000;
 
 void setupWifi();
 void callback(char *intopic, byte *payload, unsigned int length);
@@ -75,7 +84,7 @@ void mqtt_wifi_init()
 
 void setupWifi()
 {
-    const char *ssid = "catsvn";
+    const char *ssid = "catsvn_5GHz";
     const char *password = "catsvn2000";
     // const char *ssid = "Wifi ของ korrawiz";
     // const char *password = "korrawiz";
@@ -108,8 +117,22 @@ void imu_init()
 
 void imu_task()
 {
-    M5.IMU.getAccelData(&accX, &accY, &accZ);
+    static long now;
     M5.IMU.getGyroData(&gyroX, &gyroY, &gyroZ);
+    if (millis() - now >= 1000){
+    M5.IMU.getAccelData(&accX, &accY, &accZ);
+    float estimated_valueX = simpleKalmanFilter.updateEstimate(accX);
+    float estimated_valueY = simpleKalmanFilter.updateEstimate(accY);
+    float estimated_valueY = simpleKalmanFilter.updateEstimate(accZ_no_g);
+    disX = (v0X*((millis()-now)/1000))+((estimated_valueX/2)*(((millis()-now)/1000)*((millis()-now)/1000)));
+    disY = (v0Y*((millis()-now)/1000))+((estimated_valueY/2)*(((millis()-now)/1000)*((millis()-now)/1000)));
+    disZ = (v0Z*((millis()-now)/1000))+((estimated_valueY/2)*(((millis()-now)/1000)*((millis()-now)/1000)));
+     
+    coX = coX + disX; 
+    coY = coY + disY;
+    coZ = coZ + disZ;
+    now = millis();
+    }
 }
 
 void lcd_init()
@@ -241,14 +264,14 @@ void mqtt_reconnect()
 void json_task_send_coord()
 {
     static long now;
-    if (millis() - now >= 3000)
-    {
-        float coordX = accX + 100.0;
-        float coordY = accY + 100.0;
-        float coordZ = accZ + 100.0;
 
-        sprintf(payload, "{\"COORD_X\":%7.2f,\"COORD_Y\":%7.2f,\"COORD_Z\":%7.2f,\"TIME_STAMP\":4}", coordX, coordY, coordZ);
-        client.publish(topic_json, payload);
+    if (millis() - now >= delay_mqtt_json_pub)
+    {
+
+        sprintf(payload_co, "{\"px\":%7.2f,\"py\":%7.2f,\"pz\":%7.2f,\"TIME_STAMP\":%d}", coX, coY, coZ, millis());
+        sprintf(payload_gyro, "{\"gyrox\":%7.2f,\"gyroy\":%7.2f,\"gyroz\":%7.2f,\"TIME_STAMP\":%d}", gyroX, gyroY, gyroZ, millis());
+        client.publish(topic_json_co, payload_co);
+        client.publish(topic_json_gyro, payload_gyro);
 
         client.loop();
         now = millis();
@@ -291,14 +314,16 @@ void servo_motor()
 {
     SERVO_1 = sub_angle_servo_1;
     SERVO_2 = sub_angle_servo_2;
-    for (int i = 0; i <= SERVO_1; i++)
-        for (int i = 0; i <= SERVO_2; i++)
-        {
-            {
-                pwm.setPWM(0, 0, SERVO_1);
-                pwm.setPWM(1, 0, SERVO_2);
-            }
-        }
+    // for (int i = 0; i <= SERVO_1; i++)
+    //     for (int j = 0; j <= SERVO_2; j++)
+    //     {
+    //         {
+    // pwm.setPWM(0, 0, SERVO_1);
+    // pwm.setPWM(1, 0, SERVO_2);
+    pwm.setPWM(6, 0, SERVO_1);
+    pwm.setPWM(7, 0, SERVO_2);
+    //     }
+    // }
     // delay(5000);
     // then reset to the initial position
     // or use the for loop to gradually get to the final and initial
@@ -375,6 +400,7 @@ void loop()
     {
         json_task_send_coord();
         // mqtt_pub();
+
         break;
     }
     case 6:
