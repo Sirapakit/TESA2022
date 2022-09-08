@@ -5,7 +5,10 @@ proxyIn = mqtt2ros("tgr2022/bmeranger12/in","tgr2022/bmeranger12/in");
 cliNode = ros2node("Clinode"); %create node
 ros2 node list %check node
 rosSub = ros2subscriber(cliNode,"tgr2022/bmeranger12/in"); %ros subscribe mqtt,"geometry_msgs/Twist"
-receive(rosSub);% receive data
+
+    receivevalue= receive(rosSub);% receive data
+    disp ("ros data received");
+   
 
 
 %%
