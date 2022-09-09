@@ -5,11 +5,19 @@
 #include <analogWrite.h>
 #include <Adafruit_PWMServoDriver.h>
 #include <SimpleKalmanFilter.h>
+#include <Tone32.h>
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 Adafruit_PWMServoDriver pwm = Adafruit_PWMServoDriver();
 SimpleKalmanFilter simpleKalmanFilter(0.001, 0.03, 0.03);
+
+#define BUZZER_PIN 2
+#define BUZZER_CHANNEL 0
+
+int notes[9] = {NOTE_C6, NOTE_D6, NOTE_E6, NOTE_F6, NOTE_G6, NOTE_A6, NOTE_B6, NOTE_C7, NOTE_D7};
+
+float ONE_STEP_Z_AXIS = 0.1;
 
 const char *intopic = "PWM";
 
@@ -23,6 +31,9 @@ float accX, accY, accZ;
 float gyroX, gyroY, gyroZ;
 float disX, disY, disZ;
 int Voltage;
+
+int MIDDLE_FINGER_POTEN = 36;
+int THRES = 4095;
 
 bool wifi_status = false;
 bool sub_status = false;
@@ -45,6 +56,7 @@ int delay_mqtt_json_pub = 3000;
 
 static float coX = 0;
 static float coY = 0;
+static float coZ = 0;
 
 void setupWifi();
 void callback(char *intopic, byte *payload, unsigned int length);
@@ -226,16 +238,19 @@ void mqtt_reconnect()
     }
 }
 
-// void pz_logic()
-// {
-//     static long now;
-//     if (M5.BtnA.pressedFor(1000))
-//     {
-//         coZ = coZ + ONE_STEP_Z_AXIS;
-//         analogWrite(GPIO_NUM_2); // NUM2 IS BUZZER
-//         delay(1000);
-//     }
-// }
+void pz_logic()
+{
+    static long now;
+    if (M5.BtnA.pressedFor(1000))
+    {
+        coZ = coZ + ONE_STEP_Z_AXIS;
+        // digitalWrite(2, HIGH);
+        tone(BUZZER_PIN, notes[1], 500, HIGH); // NUM2 IS BUZZER
+        delay(1000);
+        Serial.println("Can Pressed again");
+    }
+    M5.update();
+}
 
 void json_task_send_coord()
 {
@@ -246,7 +261,7 @@ void json_task_send_coord()
     {
         // TonyA
         // sprintf(payload_co, "{\"px\":%7.2f,\"py\":%7.2f,\"pz\":%7.2f,\"gp\":%s,\"TIME_STAMP\":%d}", 4, 4, 4, gripper_logic, millis());
-        sprintf(payload_co, "{\"px\":%7.2f,\"py\":%7.2f,\"pz\":0,\"gp\":%d,\"TIME_STAMP\":%d}", coX, coY, gripper_state, millis());
+        sprintf(payload_co, "{\"px\":%7.2f,\"py\":%7.2f,\"pz\":%7.2f,\"gp\":%d,\"TIME_STAMP\":%d}", coX, coY, coZ, gripper_state, millis());
         // need pz logic and gp logic
 
         // TonyB
@@ -261,18 +276,18 @@ void json_task_send_coord()
     }
 }
 
-// void gripper_logic()
-// {
-//     static long now;
-//     if (analogRead(MIDDLE_FINGER_POTEN) >= THRES)
-//     {
-//         gripper_state = 1;
-//     }
-//     else
-//     {
-//         gripper_state = 0;
-//     }
-// }
+void gripper_logic()
+{
+    static long now;
+    if (analogRead(MIDDLE_FINGER_POTEN) >= THRES)
+    {
+        gripper_state = 1;
+    }
+    else
+    {
+        gripper_state = 0;
+    }
+}
 
 void callback(char *intopic, byte *payload, unsigned int length)
 {
@@ -310,16 +325,16 @@ void servo_motor()
 {
     SERVO_1 = sub_angle_servo_1;
     SERVO_2 = sub_angle_servo_2;
-    for (int i = 0; i <= SERVO_1; i = i + 20)
-    {
-        for (int j = 0; j <= SERVO_2; j = j + 20)
-        {
-            pwm.setPWM(0, 0, i);
-            pwm.setPWM(1, 0, j);
-            // pwm.setPWM(6, 0, SERVO_1);
-            // pwm.setPWM(7, 0, SERVO_2);
-        }
-    }
+    // for (int i = 0; i <= SERVO_1; i = i + 20)
+    // {
+    //     for (int j = 0; j <= SERVO_2; j = j + 20)
+    //     {
+    //         pwm.setPWM(0, 0, i);
+    //         pwm.setPWM(1, 0, j);
+    pwm.setPWM(6, 0, SERVO_1);
+    // pwm.setPWM(7, 0, SERVO_2);
+    // }
+    // }
     // delay(5000);
     // then reset to the initial position
     // or use the for loop to gradually get to the final and initial
@@ -370,11 +385,12 @@ void loop()
     case 1:
     {
         mqtt_sub();
+        gripper_logic();
         break;
     }
     case 2:
     {
-        imu_task();
+        lcd_task();
         break;
     }
     case 3:
@@ -384,17 +400,17 @@ void loop()
     }
     case 4:
     {
-        lcd_task();
+        imu_task();
         break;
     }
     case 5:
     {
-        json_task_send_coord();
+        // adc_read_task();
         break;
     }
     case 6:
     {
-        adc_read_task();
+        json_task_send_coord();
         break;
     }
     default:
@@ -406,4 +422,9 @@ void loop()
     state++;
     // Serial.println("HelloWorld Debugging");
     reset_button_task();
+    pz_logic();
 }
+// 1.Check Coord
+// 2. Circuit
+// 3. pz logic
+// 4. gripper logic
