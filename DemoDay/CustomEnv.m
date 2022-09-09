@@ -103,9 +103,31 @@ classdef tgrRobotEnvInteraction < handle
                 obj.Environment.Parts{obj.PartOnRobot}.mesh.Pose = obj.CurrentTaskConfig * trvec2tform([0 0 0.04]);
                 obj.Environment.Parts{obj.PartOnRobot}.plotHandle.Matrix = obj.Environment.Parts{obj.PartOnRobot}.mesh.Pose;
             end
-            drawnow;            
+            drawnow; 
+
+        end
+        
+        function movesmooth(ikjoint)
+	        joint_states = obj.figure.Configuration
+	        tpts = 0:1;
+	        tvec = tpts(1):1/sampleRate:tpts(end);
+	        numSamples = length(tvec);
+	        rng default
+	        obj.jointN = [ikjoint]
+	        obj.wps = [joint_states; ikjoint]
+	        Timepoints = linspace(tvec(1),tvec(end),3);
+	        [q,qd] = trapveltraj(wps,numSamples);
+            joint_states = 
+	        for i = 1:numSamples
+	        show(robotCell,q(:,i),FastUpdate=true,PreservePlot=false);
+    		waitfor(rc);
+ 	        end
+	
         end
 
+
+        function showrb(obj,)
+        end
         % Delete function
         function delete(obj)
             delete(obj.Controller)
