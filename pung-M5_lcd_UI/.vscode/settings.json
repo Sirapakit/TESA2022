@@ -1,5 +1,11 @@
 {
     "files.associations": {
-        "array": "cpp"
+        "array": "cpp",
+        "*.tcc": "cpp",
+        "fstream": "cpp",
+        "istream": "cpp",
+        "ostream": "cpp",
+        "sstream": "cpp",
+        "streambuf": "cpp"
     }
 }
