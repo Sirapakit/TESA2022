@@ -4,13 +4,12 @@ classdef mqtt2ros
         ros2Node
         ros2Pub
         rosTopic
-        answer
     end
 
     methods
         function obj = mqtt2ros(mqttTopic,rosTopic)
             obj.ros2Node = ros2node('mqtt2rosNode');
-            obj.ros2Pub = ros2publisher(obj.ros2Node, rosTopic, "geometry_msgs/Twist");
+            obj.ros2Pub = ros2publisher(obj.ros2Node, rosTopic, "std_msgs/String");
             obj.rosTopic = rosTopic;            
             obj.mqttClient = mqttclient('tcp://broker.hivemq.com');
             subscribe(obj.mqttClient, mqttTopic, 'Callback', @(topic,msg) obj.mqttMsgHandler(topic,msg))            
