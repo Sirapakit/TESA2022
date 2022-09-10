@@ -1,10 +1,10 @@
 clear proxyIn
 %receive data from mqttfrom this topic(mqtt) to this topic (ros2)
 %{"dX": 1, "dY": 2, "dZ":5}
-proxyIn = mqtt2ros("tgr2022/bmeranger12/in","tgr2022/bmeranger12/in");
+proxyIn = mqtt2ros("TonyA","TonyA");
 cliNode = ros2node("Clinode"); %create node
 ros2 node list %check node
-rosSub = ros2subscriber(cliNode,"tgr2022/bmeranger12/in"); %ros subscribe mqtt,"geometry_msgs/Twist"
+rosSub = ros2subscriber(cliNode,"TonyA"); %ros subscribe mqtt,"geometry_msgs/Twist"
 
 receivevalue= receive(rosSub);% receive data
 disp ("ros data received");

@@ -11,7 +11,7 @@ classdef mqtt2ros
             obj.ros2Node = ros2node('mqtt2rosNode');
             obj.ros2Pub = ros2publisher(obj.ros2Node, rosTopic, "std_msgs/String");
             obj.rosTopic = rosTopic;            
-            obj.mqttClient = mqttclient('tcp://broker.hivemq.com');
+            obj.mqttClient = mqttclient('tcp://10.13.8.163', Port = 8883,Username="tesa",Password = "1234");
             subscribe(obj.mqttClient, mqttTopic, 'Callback', @(topic,msg) obj.mqttMsgHandler(topic,msg))            
         end
 

@@ -99,7 +99,7 @@ figure
 set(gcf,'Visible','on');
 rc = rateControl(sampleRate);
 for i = 1:numSamples
-    show(robotCell,q(:,i),FastUpdate=true,PreservePlot=false);
+    show(robot,q(:,i),FastUpdate=true,PreservePlot=false);
     waitfor(rc);
 end
 
