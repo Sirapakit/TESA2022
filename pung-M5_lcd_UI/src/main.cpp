@@ -32,9 +32,10 @@ float gyroX, gyroY, gyroZ;
 float disX, disY, disZ;
 int Voltage;
 
+float coX_f, coY_f;
+
 int MIDDLE_FINGER_POTEN = 36;
 int THRES = 4095;
-
 
 bool wifi_status = false;
 bool sub_status = false;
@@ -46,8 +47,7 @@ int sub_angle_servo_1, sub_angle_servo_2;
 int PWM_FREQ = 60;
 int SERVO_1, SERVO_2;
 
-#define GPIO_ANALOG_READ_MIDDLE_FINGER  2
-#define GPIO_ANALOG_READ_RING_FINGER  3
+int GPIO_ANALOG_READ = 36;
 
 int delay_lcd_task = 1000;
 int delay_mqtt_reconnect = 5000;
@@ -56,9 +56,9 @@ int delay_adc_read_task = 100;
 int delay_reset_buttoon_task = 3000;
 int delay_mqtt_json_pub = 3000;
 
-static float coX = 0;
-static float coY = 0;
-static float coZ = 0;
+// static float coX = 0;
+// static float coY = 0;
+float coZ = 0;
 
 void setupWifi();
 void callback(char *intopic, byte *payload, unsigned int length);
@@ -66,11 +66,13 @@ void reConnect();
 
 void mqtt_wifi_init()
 {
-    const char *mqtt_server = "10.13.8.163";
+    // const char *mqtt_server = "10.13.8.163";
+    // const char *mqtt_server = "172.21.16.171";
+
     // const char *mqtt_server = "169.254.132.183";
     // const char *mqtt_server = "10.13.8.180";
-    // const char *mqtt_server = "broker.hivemq.com";
-    // const char *mqtt_server = "tcp://0.tcp.ap.ngrok.io:17656";
+    const char *mqtt_server = "broker.hivemq.com";
+    // const char *mqtt_server = "tcp://0.tcp.ap.ngrok.io:15904";
     setupWifi();
     client.setServer(mqtt_server, 1883);
     client.setCallback(callback);
@@ -78,15 +80,15 @@ void mqtt_wifi_init()
 
 void setupWifi()
 {
-    const char *ssid = "catsvn";
-    const char *password = "catsvn2000";
+    const char *ssid = "Redmi999";
+    const char *password = "11111111";
+    // const char *ssid = "catsvn";
+    // const char *password = "catsvn2000";
 
     // IPAddress staticIP(192, 168, 1, 150);
     // IPAddress gateway(10, 13, 8, 69);
     // IPAddress subnet(255, 255, 255, 0);
     // IPAddress dns(192, 168, 1, 254);
-
-    // const char *ssid = "TESA_TOP_GUN";
 
     // const char *ssid = "Wifi ของ korrawiz";
     // const char *password = "korrawiz";
@@ -120,11 +122,10 @@ void imu_init()
 
 void imu_task()
 {
-    coX = 0;
-    coY = 0;
+    static float coX = 0;
+    static float coY = 0;
     static long now;
     M5.IMU.getGyroData(&gyroX, &gyroY, &gyroZ);
-
     if (millis() - now >= 100)
     {
         M5.IMU.getAccelData(&accX, &accY, &accZ);
@@ -138,7 +139,10 @@ void imu_task()
         coX = coX + disX;
         coY = coY + disY;
 
+        coX_f = coX;
+        coY_f = coY;
     }
+    // Serial.printf("debug");
 }
 
 void lcd_init()
@@ -207,17 +211,19 @@ void lcd_task()
 void mqtt_reconnect()
 {
 
-    const char *mqttUser = "tesa";
-    const char *mqttPassword = "1234";
+    // const char *mqttUser = "tesa";
+    // const char *mqttPassword = "1234";
     while (!client.connected())
     {
         M5.Lcd.setCursor(95, 110);
         M5.Lcd.println("Attempting");
 
-        // String clientId = "MM5St-";
-        // clientId += String(random(0xffff), HEX);
+        String clientId = "MM5St-";
+        clientId += String(random(0xffff), HEX);
 
-        if (client.connect("BMErangerClient", mqttUser, mqttPassword))
+        // if (client.connect("BMErangerClient", mqttUser, mqttPassword))
+        // if (client.connect("BMErangerClient"))
+        if (client.connect(clientId.c_str()))
         {
             M5.Lcd.setCursor(95, 110);
             client.subscribe(intopic);
@@ -265,7 +271,7 @@ void json_task_send_coord()
     {
         // TonyA
         // sprintf(payload_co, "{\"px\":%7.2f,\"py\":%7.2f,\"pz\":%7.2f,\"gp\":%s,\"TIME_STAMP\":%d}", 4, 4, 4, gripper_logic, millis());
-        sprintf(payload_co, "{\"px\":%7.2f,\"py\":%7.2f,\"pz\":%7.2f,\"gp\":%d,\"TIME_STAMP\":%d}", coX, coY, coZ, gripper_state, millis());
+        sprintf(payload_co, "{\"px\":%7.2f,\"py\":%7.2f,\"pz\":%7.2f,\"gp\":%d,\"TIME_STAMP\":%d}", coX_f, coY_f, coZ, gripper_state, millis());
         // need pz logic and gp logic
 
         // TonyB
@@ -346,17 +352,11 @@ void servo_motor()
 
 void adc_read_task()
 {
-    pot_value_middle_finger = analogRead(GPIO_ANALOG_READ_MIDDLE_FINGER);
-    pot_value_ring_finger = analogRead(GPIO_ANALOG_READ_RING_FINGER);
+    static int pot_value = analogRead(GPIO_ANALOG_READ);
     static long now;
     if (millis() - now >= delay_adc_read_task)
     {
-        if (pot_value_middle_finger > threshold_middle_finger && pot_value_ring_finger > threshold_ring_finger){
-            gripper_logic = true;
-        }
-        else{
-            gripper_logic = false;
-        }
+        pot_value = Voltage;
         now = millis();
     }
 }
